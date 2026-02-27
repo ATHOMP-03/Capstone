@@ -1,0 +1,186 @@
+---
+title: "Sentiment Analysis V1"
+author: "Ashley Thompson"
+date: "`r Sys.Date()`"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+install.packages("readxl")
+install.packages("dagitty")
+
+library(readxl)
+library(dplyr)
+library(tidyr)
+library(stringr)
+library(purrr)
+library(janitor)
+library(plm)
+library(dagitty)
+library(fixest)
+
+
+
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## What's the cost of bad press? 
+Do social media postings impact the value of a company, and to what extent? I will explore the causal impact of adverse social media exposure on a company’s value as indicated by share prices. 
+
+Using panel data on share price and sentiment ratings provided by Bloomberg Intelligence, I assess the influence negative sentiment has on share price. 
+
+This will be calculated in three core steps:
+
+1. Data cleaning and preparation: Removal of NaN values, generation of a price change figure for each time period being investigated, and the generation of a treatment dummy corresponding to negative social media sentiment (less than zero) to isolate a treatment group. 
+
+2. Fixed effects regression: To account for differences in companies, we will run company-level fixed effects with the following time lags for treatment, 1 day, 2 days, 3 days, 5 days, 7 days
+
+3. Exploratory analysis to further isolate the causal effect of social media sentiment: Isolated treatment effect of comments by famous people, double debiased ML application with a broad set of counfounders, and use of hourly pricing data on the most influenced stocks to isolate the immediate impact of social media sentiment from other endogenous factors affecting share price.
+```{r data_prep}
+#LOAD & PIVOT DATA TO LONG FORMAT
+
+source = "/Users/ashleythompson/Desktop/Dev Projects/Capstone/pricepanel.xlsx"
+sheet = 1               
+
+raw = read_excel(source, sheet = sheet, col_names = FALSE)
+
+# pull select top row fields for new columns
+h1 = raw[1, ] %>% unlist(use.names = FALSE) %>% as.character()  # tickers
+h3 = raw[3, ] %>% unlist(use.names = FALSE) %>% as.character()  # (PX_OPEN, PX_LAST, TWITTER_S)
+
+# Normalize blanks
+h1 = na_if(str_trim(h1), "")
+h3 = na_if(str_trim(h3), "")
+
+# Fill down ticker names
+h1 = tidyr::fill(tibble(x = h1), x, .direction = "down")$x
+
+# KEEP: date col
+keep_cols = c(1, which(!is.na(h3) & seq_along(h3) != 1))
+
+raw = raw[, keep_cols]
+h1 = h1[keep_cols]
+h3 = h3[keep_cols]
+
+# reomve top three rows
+dat = raw[-c(1,2,3), ]
+
+names(dat)[1] = "date"
+names(dat) = c("date", map2_chr(h1[-1], h3[-1], ~ paste0(.x, "__", .y)))
+
+names(dat) = make.unique(names(dat), sep = "__dup__")
+
+# convert dates to actual dates from numbers 
+dat = dat %>%
+    mutate(date = as.Date(as.numeric(date), origin = "1899-12-30"))
+
+# pivot to long format
+long = dat %>%
+  pivot_longer(
+    cols = -date,
+    names_to = c("ticker", "field"),
+    names_sep = "__",
+    values_to = "value"
+  ) %>%
+  pivot_wider(names_from = field, values_from = value) %>%
+  transmute(
+    date = date,
+    ticker = ticker,
+    PX_OPEN = PX_OPEN,
+    PX_CLOSE = PX_LAST,
+    twitter_sent = TWITTER_SENTIMENT_DAILY_AVG
+  ) %>%
+  arrange(ticker, date)
+
+long
+
+```
+# Remove NaN values
+``` {r remove nans}
+long = long %>%
+  mutate(across(everything(), ~ na_if(as.character(.x), "#N/A N/A"))) %>%
+  mutate(across(everything(), ~ na_if(.x, "#N/A"))) %>%
+  mutate(across(c(PX_OPEN, PX_CLOSE, twitter_sent), ~ as.numeric(.x)))
+
+# get rid of non trading days... which are the N/A vales
+long = long %>%
+  filter(!is.na(PX_OPEN), !is.na(PX_CLOSE))
+
+```
+
+## Compute daily return and lag returns
+```{r returns}
+#one day return
+long = long %>%
+  mutate(return = PX_CLOSE - PX_OPEN)
+
+#lags
+long = long %>%
+  arrange(ticker, date) %>%
+  group_by(ticker) %>%
+  mutate(
+    lag1 = lag(return, 1),
+    lag2 = lag(return, 2),
+    lag3 = lag(return, 3),
+    lag5 = lag(return, 5),
+    lag7 = lag(return, 7)
+  ) %>%
+  ungroup()
+```
+#Data summary
+``` {r data}
+summary(long)
+```
+
+
+
+# Initial Regression (PLM)
+
+``` {r plm regression}
+
+model_plm = plm(return ~ twitter_sent, data = long, index = c("ticker"), model = "within")
+summary(model_plm)
+
+```
+
+
+``` {r fixest regression}
+
+model_feols = feols(return ~ twitter_sent| ticker, data = long)
+summary(model_feols)
+
+```
+
+
+```{r DAG}
+dag {
+bb="0,0,1,1"
+"PX OPEN" [pos="0.380,0.477"]
+"Price Trend (Last 3 days)" [pos="0.421,0.774"]
+AVG_TWITTER_SENTIMENT [exposure,pos="0.532,0.668"]
+CUR_MKT_CAP [pos="0.184,0.697"]
+EQY_FLOAT [pos="0.183,0.526"]
+PX_HIGH [pos="0.647,0.642"]
+PX_LAST [pos="0.643,0.489"]
+PX_LOW [pos="0.760,0.720"]
+PX_VOLUME [pos="0.531,0.339"]
+RETURN [outcome,pos="0.842,0.492"]
+SHR_OUT [pos="0.382,0.341"]
+"PX OPEN" -> AVG_TWITTER_SENTIMENT
+"Price Trend (Last 3 days)" -> "PX OPEN"
+"Price Trend (Last 3 days)" -> AVG_TWITTER_SENTIMENT
+AVG_TWITTER_SENTIMENT -> PX_HIGH
+AVG_TWITTER_SENTIMENT -> PX_LOW
+AVG_TWITTER_SENTIMENT <-> PX_VOLUME
+CUR_MKT_CAP -> "PX OPEN"
+CUR_MKT_CAP -> AVG_TWITTER_SENTIMENT
+EQY_FLOAT -> "PX OPEN"
+PX_HIGH -> PX_LAST
+PX_LAST -> RETURN
+PX_LOW -> PX_LAST
+PX_VOLUME -> PX_LAST
+SHR_OUT -> PX_VOLUME
+}
+
+
+```
