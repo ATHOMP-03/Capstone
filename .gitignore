@@ -1,15 +1,8 @@
-# Raw data (keep local, don't push to GitHub)
 data/raw/*.csv
 data/raw/*.xlsx
-
-# Python
 __pycache__/
 *.pyc
 .venv/
-
-# R
 .Rhistory
 .RData
-
-# OS files
 .DS_Store
