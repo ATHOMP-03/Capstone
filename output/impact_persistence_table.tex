@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\centering
+\caption{Impact Persistence --- Current Sentiment and Future Return (DoubleML PLR)}
+\begin{tabular}{llcccc}
+\hline\hline
+Treatment & Lead & Coefficient & Std Err & p-value & 95\% CI \\
+\hline
+news\_sent & 1 & -0.357017** &  & 0.0186 & [-0.657748, -0.059756] \\
+twitter\_sent & 1 & -0.111458 &  & 0.6094 & [-0.537107, 0.316047] \\
+news\_sent & 2 & 0.311669*** &  & 0.0090 & [0.074430, 0.545631] \\
+twitter\_sent & 2 & 0.217330 &  & 0.3008 & [-0.194791, 0.628997] \\
+news\_sent & 3 & -0.226585* &  & 0.0575 & [-0.457798, 0.007184] \\
+twitter\_sent & 3 & -0.071248 &  & 0.7282 & [-0.480987, 0.330521] \\
+news\_sent & 5 & -0.215964* &  & 0.0578 & [-0.438797, 0.007146] \\
+twitter\_sent & 5 & -0.033204 &  & 0.8668 & [-0.420425, 0.354753] \\
+news\_sent & 7 & 0.342398*** &  & 0.0026 & [0.112941, 0.565643] \\
+twitter\_sent & 7 & 0.027558 &  & 0.8938 & [-0.375978, 0.432329] \\
+\hline
+Estimator & \multicolumn{5}{l}{DoubleML PLR, XGBoost (GPU), 5-fold, 20 reps} \\
+\hline\hline
+\multicolumn{6}{l}{\footnotesize \textit{Notes:} Each lead estimated separately. Outcome: return\_lead$n$ (return $n$ days ahead). Hypothesis: twitter\_sent decays by lead 2--3; news\_sent persists to lead 5--7 (Gu \& Kurov 2020). XGBoost learner, 5-fold, 20 reps, 1000 bootstrap draws. *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}

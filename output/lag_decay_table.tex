@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\centering
+\caption{Lag Decay --- Lagged Sentiment and Current Return (DoubleML PLR)}
+\begin{tabular}{llcccc}
+\hline\hline
+Treatment & Lag & Coefficient & Std Err & p-value & 95\% CI \\
+\hline
+news\_sent & 1 & -1.169012*** &  & 0.0000 & [-1.446810, -0.888520] \\
+twitter\_sent & 1 & -1.215320*** &  & 0.0000 & [-1.520064, -0.910576] \\
+news\_sent & 2 & -0.793453*** &  & 0.0000 & [-1.037684, -0.543157] \\
+twitter\_sent & 2 & -0.957274*** &  & 0.0000 & [-1.243073, -0.672875] \\
+news\_sent & 3 & -1.363310*** &  & 0.0000 & [-1.551271, -1.177750] \\
+twitter\_sent & 3 & -1.122099*** &  & 0.0000 & [-1.411447, -0.832751] \\
+news\_sent & 5 & -0.942506*** &  & 0.0000 & [-1.129350, -0.755663] \\
+twitter\_sent & 5 & -1.126149*** &  & 0.0000 & [-1.396626, -0.856494] \\
+news\_sent & 7 & -0.638419*** &  & 0.0000 & [-0.817363, -0.459343] \\
+twitter\_sent & 7 & -0.674264*** &  & 0.0000 & [-0.960148, -0.385289] \\
+\hline
+Estimator & \multicolumn{5}{l}{DoubleML PLR, XGBoost (GPU), 5-fold, 20 reps} \\
+\hline\hline
+\multicolumn{6}{l}{\footnotesize \textit{Notes:} Each lag estimated separately (univariate). Outcome: current-day return. BASE\_CONFOUNDERS excludes contemporaneous sentiment to avoid endogeneity. XGBoost learner, 5-fold, 20 reps, 1000 bootstrap draws. *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
