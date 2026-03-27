@@ -39,7 +39,7 @@ This will be calculated in three core steps:
 ```{r data_prep}
 #LOAD & PIVOT DATA TO LONG FORMAT
 
-source = "/Users/ashleythompson/Desktop/Dev Projects/Capstone/pricepanel.xlsx"
+source = "/Users/ashleythompson/Desktop/Capstone/data/raw/Bloomber25MAR.xlsx"
 sheet = 1               
 
 raw = read_excel(source, sheet = sheet, col_names = FALSE)
