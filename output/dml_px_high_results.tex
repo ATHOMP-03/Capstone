@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{DoubleML PLR --- Sentiment and Intraday Price High (px\_high)}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Twitter Sentiment & (2) Neg Tweet Count \\
+\hline
+twitter\_sent & 1.610130*** & --- \\
+& (0.217458) &  \\
+twitter\_neg\_count & --- & -0.002082* \\
+&  & (0.001189) \\
+\hline
+Estimator & DoubleML PLR & DoubleML PLR \\
+ML Learner & XGBoost (GPU) & XGBoost (GPU) \\
+\hline\hline
+\multicolumn{3}{l}{\footnotesize \textit{Notes:} Heteroskedasticity-robust SE in parentheses. XGBoost learner with 5-fold cross-fitting, 20 repetitions, 1000 bootstrap draws. Outcome is intraday high price (px\_high); return excluded from confounders. Run 2 per Teti et al. (2019). *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
