@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{DoubleML PLR --- Twitter Sentiment and Stock Returns}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Twitter Sentiment & (2) Neg Tweet Count \\
+\hline
+twitter\_sent & -0.924313*** & --- \\
+& (0.225639) &  \\
+twitter\_neg\_count & --- & 0.003987*** \\
+&  & (0.001503) \\
+\hline
+Estimator & DoubleML PLR & DoubleML PLR \\
+ML Learner & XGBoost (GPU) & XGBoost (GPU) \\
+\hline\hline
+\multicolumn{3}{l}{\footnotesize \textit{Notes:} Heteroskedasticity-robust SE in parentheses. XGBoost learner with 5-fold cross-fitting, 20 repetitions, 1000 bootstrap draws. Run 2 per Teti et al. (2019): polarity-broken tweet counts outperform total count. *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
