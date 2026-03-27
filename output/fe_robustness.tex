@@ -1,0 +1,47 @@
+\begin{threeparttable}
+\begingroup
+\renewcommand\cellalign{t}
+\renewcommand\arraystretch{1}
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l>{\centering\arraybackslash}X>{\centering\arraybackslash}X}
+\toprule
+ & \multicolumn{1}{c}{lag1} & \multicolumn{1}{c}{return} \\
+\cmidrule(lr){2-2} \cmidrule(lr){3-3}
+ & (1) & (2) \\
+\midrule
+\addlinespace[1ex]
+twitter_sent & \makecell{2.348 \\ (0.225)} &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag1 &  & \makecell{-0.322 \\ (0.196)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag2 &  & \makecell{0.088 \\ (0.196)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag3 &  & \makecell{-0.225 \\ (0.192)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag5 &  & \makecell{-0.285 \\ (0.175)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag7 &  & \makecell{0.222 \\ (0.166)} \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+ticker & x & x \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+Observations & 159,606 & 156,589 \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+$R^2$ & 0.003 & 0.002 \\
+\addlinespace[0.5ex]
+\bottomrule
+\end{tabularx}
+\endgroup
+\noindent\begin{minipage}{\linewidth}\smallskip\footnotesize
+Placebo: lag1 $\sim$ twitter\_sent $|$ ticker. No-reversal: all sentiment lags estimated jointly. Only sent\_lag1 should be significant under a causal interpretation (Gu \& Kurov, 2020).\end{minipage}
+
+\end{threeparttable}

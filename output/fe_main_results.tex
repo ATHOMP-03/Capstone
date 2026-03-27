@@ -1,0 +1,65 @@
+\begin{threeparttable}
+\begingroup
+\renewcommand\cellalign{t}
+\renewcommand\arraystretch{1}
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l>{\centering\arraybackslash}X>{\centering\arraybackslash}X>{\centering\arraybackslash}X>{\centering\arraybackslash}X}
+\toprule
+ & \multicolumn{4}{c}{return} \\
+\cmidrule(lr){2-5}
+ & (1) & (2) & (3) & (4) \\
+\midrule
+\addlinespace[1ex]
+twitter_sent & \makecell{-0.37 \\ (0.23)} & \makecell{-0.422 \\ (0.325)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+px_high &  & \makecell{-0.085 \\ (0.121)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+px_low &  & \makecell{0.091 \\ (0.122)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+mkt_cap &  & \makecell{0 \\ (0.000001)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+total_equity &  & \makecell{0.000001 \\ (0.000004)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+debt_to_equity &  & \makecell{-0.000089 \\ (0.000049)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+volume &  & \makecell{0 \\ (0)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+news_sent &  & \makecell{-1.056 \\ (0.114)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+rsi_30 &  & \makecell{0.084 \\ (0.016)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+ma_50 &  & \makecell{-0.013 \\ (0.011)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+twitter_neg_count &  & \makecell{0.00085 \\ (0.001)} &  & \makecell{0.000533 \\ (0.000971)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+neg_twitter_sent &  &  & \makecell{-0.072 \\ (0.271)} &  \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+ticker & x & x & x & x \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+Observations & 160,103 & 147,128 & 160,103 & 159,232 \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+$R^2$ & 0.002 & 0.019 & 0.002 & 0.002 \\
+\addlinespace[0.5ex]
+\bottomrule
+\end{tabularx}
+\endgroup
+\noindent\begin{minipage}{\linewidth}\smallskip\footnotesize
+Heteroskedasticity-robust SE in parentheses. Company fixed effects in all models. Model 3 treatment is clip(twitter\_sent, max=0). Model 4 per Teti et al. (2019).\end{minipage}
+
+\end{threeparttable}
