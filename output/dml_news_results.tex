@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{DoubleML PLR --- News Sentiment and Stock Returns}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) News Sentiment & (2) Neg News Volume \\
+\hline
+news\_sent & -0.759391*** & --- \\
+& (0.134525) &  \\
+neg\_news\_vol & --- & 0.000588** \\
+&  & (0.000232) \\
+\hline
+Estimator & DoubleML PLR & DoubleML PLR \\
+ML Learner & XGBoost (GPU) & XGBoost (GPU) \\
+\hline\hline
+\multicolumn{3}{l}{\footnotesize \textit{Notes:} Heteroskedasticity-robust SE in parentheses. XGBoost learner with 5-fold cross-fitting, 20 repetitions, 1000 bootstrap draws. Run 2 treatment: neg\_news\_vol = twitter\_count $\times$ \mathbb{1}(news\_sent $<$ 0). *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
