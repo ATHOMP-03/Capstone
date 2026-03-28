@@ -1,0 +1,309 @@
+# Results
+
+## Analytical Approach
+
+This study seeks to estimate the causal effect of social media sentiment on stock prices using two complimentary identification strategies.
+
+The first employs a firm-level fixed effects regresssion using `pyfixest`. This allows for the control of time-invariate factors within each firm, to account shocks to individual firms which may skew results. This strategy assumes that confounders influence the outcome in some linear manner, making it the simpler of the two models.
+
+The second strategy employs a doubly debiaed machine learning estimator - DoubleML Partial Linear Regression (`DoubleMLPLR`) combined with `XGBoost`, a nuisance learner.  This straegy allows XGBoost to identify connections between the treatment and dependent variables across the matrix of confounders to generate predictive models, then using DoubleMLPLR to identify a coefficient, producing a treatment effect. For this initial set of estimations, I opted for 5-fold cross fitting done over 20 repetitions, with 1000 bootstrap draws to arrive at an estimator.
+
+With both methods, data consisted of daily panel data pulled from Bloomberg.  Sentiment ratings were provided using Bloomberg's proprietary tool as well.
+
+---
+
+## Fixed Effects Results
+
+Table 1 presents the four FE-OLS specifications. None of the models produced statistically significant results for Twitter sentiment's impact on stock price. This indicates that interactions between tweets and traders do not influence behavior more than other factors.  However, each model provides interesting insights into the relationship between social media and share price.
+
+Model 1 is the baseline regression of return on `twitter_sent` witout confounders. The estimated coefficient is –0.370, indicating that a one-unit increase in Twitter sentiment is associated with a 0.37 cent decrease in the same-day return. While the sign is consistent with expected findings, the result is not statistically significant.  Also, the R-squared (0.002) tells us that sentiment explains little of what's driving share prices.
+
+Model 2 adds the full confounder matrix: intraday price range (px_high, px_low), market capitalization, total equity, debt-to-equity ratio, trading volume, news sentiment, RSI (30-day), and the 50-day moving average. The `twitter_sent` coefficient's significance improved slightly, however, it is still insignificant. However, `news_sent` is substantial and significant. RSI was significant as well.  This tells us that news sentiment and RSI are stronger predictors of returns than is Twitter sentiment, at least in an OLS framework.
+
+Models 3 and 4 were intended to check other approaches to see if they yielded better retulst. Model 3 uses a negative sentiment measure `neg_twitter_sent`, which is zero on positive-sentiment days and equals the raw score on negative-sentiment days. The coefficient was –0.072, smaller in magnitude than Model 1 and not statistically significant. This suggests that negative sentiment does not have particularly more effect than the entire spectrum of sentiment scores.
+
+Model 4 borrowed from a previous study and used tweet counts (`twitter_neg_count`) as the treatment. The coefficient is 0.000533, indicating that to some extent any press is good press, but not in a statistically significant way.
+
+**Table 1: Fixed Effects OLS — Twitter Sentiment and Stock Returns**
+
+```latex
+\begin{threeparttable}
+\begingroup
+\renewcommand\cellalign{t}
+\renewcommand\arraystretch{1}
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l>{\centering\arraybackslash}X>{\centering\arraybackslash}X>{\centering\arraybackslash}X>{\centering\arraybackslash}X}
+\toprule
+ & \multicolumn{4}{c}{return} \\
+\cmidrule(lr){2-5}
+ & (1) & (2) & (3) & (4) \\
+\midrule
+\addlinespace[1ex]
+twitter_sent & \makecell{-0.37 \\ (0.23)} & \makecell{-0.422 \\ (0.325)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+px_high &  & \makecell{-0.085 \\ (0.121)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+px_low &  & \makecell{0.091 \\ (0.122)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+mkt_cap &  & \makecell{0 \\ (0.000001)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+total_equity &  & \makecell{0.000001 \\ (0.000004)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+debt_to_equity &  & \makecell{-0.000089 \\ (0.000049)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+volume &  & \makecell{0 \\ (0)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+news_sent &  & \makecell{-1.056 \\ (0.114)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+rsi_30 &  & \makecell{0.084 \\ (0.016)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+ma_50 &  & \makecell{-0.013 \\ (0.011)} &  &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+twitter_neg_count &  & \makecell{0.00085 \\ (0.001)} &  & \makecell{0.000533 \\ (0.000971)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+neg_twitter_sent &  &  & \makecell{-0.072 \\ (0.271)} &  \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+ticker & x & x & x & x \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+Observations & 160,103 & 147,128 & 160,103 & 159,232 \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+$R^2$ & 0.002 & 0.019 & 0.002 & 0.002 \\
+\addlinespace[0.5ex]
+\bottomrule
+\end{tabularx}
+\endgroup
+\noindent\begin{minipage}{\linewidth}\smallskip\footnotesize
+Heteroskedasticity-robust SE in parentheses. Company fixed effects in all models. Model 3 treatment is clip(twitter\_sent, max=0). Model 4 per Teti et al. (2019).\end{minipage}
+
+\end{threeparttable}
+```
+
+---
+
+## DoubleML Results - Sentiment
+
+Table 2 presents the DoubleMLPLR estimates, amd the contrast with the FE results is stark.
+
+Run 1, using `twitter_sent` as the continuous treatment, yielded a coefficient of –0.924 with strong significance. This indicates that changes in twitter sentiment negatively influence share prices, regardless of the direction of sentiment. So maybe all twitter coverage is bad press. However, in Run 2, which uses `twitter_neg_count` as the treatment to determine if tweet volume played a role, the DoubleML estimate is +0.003987. This positive, significant coefficient indicates that a higher count of negative tweets is associated with higher same-day returns.  This was unexpected, and means that potentially tweet volume and tweet sentiment are not necessarily connected.  My interpretation is that when a company is focused upon, the total number of tweets for the day increases, also increasing the amount of negative comments, but not impacting sentiment across the day.
+
+**Table 2: DoubleML PLR — Twitter Sentiment and Stock Returns**
+
+```latex
+\begin{table}[htbp]
+\centering
+\caption{DoubleML PLR --- Twitter Sentiment and Stock Returns}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Twitter Sentiment & (2) Neg Tweet Count \\
+\hline
+twitter\_sent & -0.924313*** & --- \\
+& (0.225639) &  \\
+twitter\_neg\_count & --- & 0.003987*** \\
+&  & (0.001503) \\
+\hline
+Estimator & DoubleML PLR & DoubleML PLR \\
+ML Learner & XGBoost (GPU) & XGBoost (GPU) \\
+\hline\hline
+\multicolumn{3}{l}{\footnotesize \textit{Notes:} Heteroskedasticity-robust SE in parentheses. XGBoost learner with 5-fold cross-fitting, 20 repetitions, 1000 bootstrap draws. Run 2 per Teti et al. (2019): polarity-broken tweet counts outperform total count. *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
+```
+
+Table 3 shows results from applying the DoubleML framework to news sentiment. Run 1 shows that when using `news_sent` as treatment, we get a confident estimator of –0.759.  This result is consistent with the run of FE Model 2 (which showed news sentiment as the strongest predictor of retun), but adds additional credibility.  My second run for news sentiment was incorrectly set up, and is being removed as it is essentially the same as the run negative tweet counts.  This is from a limitation in Bloomberg's data, wherein they cannot collect a count of news mentions across a day.
+
+**Table 3: DoubleML PLR — News Sentiment and Stock Returns**
+
+```latex
+\begin{table}[htbp]
+\centering
+\caption{DoubleML PLR --- News Sentiment and Stock Returns}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) News Sentiment & (2) Neg News Volume \\
+\hline
+news\_sent & -0.759391*** & --- \\
+& (0.134525) &  \\
+neg\_news\_vol & --- & 0.000588** \\
+&  & (0.000232) \\
+\hline
+Estimator & DoubleML PLR & DoubleML PLR \\
+ML Learner & XGBoost (GPU) & XGBoost (GPU) \\
+\hline\hline
+\multicolumn{3}{l}{\footnotesize \textit{Notes:} Heteroskedasticity-robust SE in parentheses. XGBoost learner with 5-fold cross-fitting, 20 repetitions, 1000 bootstrap draws. Run 2 treatment: neg\_news\_vol = twitter\_count $\times$ \mathbb{1}(news\_sent $<$ 0). *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
+```
+
+---
+
+## DoubleML Results - Intraday Price High
+
+Table 4 shows results for the eamination of `px_high` (highest sale price of the day) as the outcome, while leaving the confounder set the same as in other runs. Here Run 1, `twitter_sent ~ px_high` yielded +1.610. This positive coefficient means positive Twitter sentiment raises the intraday price ceiling - a result in direct contrast with the negative `twitter_sent ~ return`, which was negative. Then in Run 2, `twitter_neg_count ~ px_high` produced a significant estimator of –0.002082.  Again, this is the opposite direction of `twitter_neg_count ~ px_high` from the previous runs.  This indicates that either px_high is being influenced differently than return, or that factors impacting highs resolve themeselves over the course of the trading day.
+
+**Table 4: DoubleML PLR — Sentiment and Intraday Price High**
+
+```latex
+\begin{table}[htbp]
+\centering
+\caption{DoubleML PLR --- Sentiment and Intraday Price High (px\_high)}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Twitter Sentiment & (2) Neg Tweet Count \\
+\hline
+twitter\_sent & 1.610130*** & --- \\
+& (0.217458) &  \\
+twitter\_neg\_count & --- & -0.002082* \\
+&  & (0.001189) \\
+\hline
+Estimator & DoubleML PLR & DoubleML PLR \\
+ML Learner & XGBoost (GPU) & XGBoost (GPU) \\
+\hline\hline
+\multicolumn{3}{l}{\footnotesize \textit{Notes:} Heteroskedasticity-robust SE in parentheses. XGBoost learner with 5-fold cross-fitting, 20 repetitions, 1000 bootstrap draws. Outcome is intraday high price (px\_high); return excluded from confounders. Run 2 per Teti et al. (2019). *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
+```
+
+---
+
+## Robustness Checks
+
+**Placebo test.** To test whether today's Twitter sentiment predicts yesterday's return
+I regress `lag1` (prior-day return) on `twitter_sent` within firms. If there were no reverse causality, the coefficient should be statistically indistinguishable from zero, however estimated coefficient is +2.348, making it both large and highly significant. This is a serious concern bbecause it indicates that Twitter sentiment is more likely caused by returns, than the otehr way around.
+
+**No-reversal test.** I estimate all sentiment lags jointly (lags 1, 2, 3, 5, and 7) to test whether only lag 1 is significant. This would be expected if sentiment reflects news that is fully absorbed on day 1. None of the lag coefficients are statistically significant, and the signs alternate. This result is inconclusive, and the lack of significance at lag 1 suggests that any causal sentiment signal is likely too weak to survive multicollinear estimation against lags 2–7.
+
+**Table: FE Robustness — Placebo and No-Reversal Tests**
+
+```latex
+\begin{threeparttable}
+\begingroup
+\renewcommand\cellalign{t}
+\renewcommand\arraystretch{1}
+\setlength{\tabcolsep}{3pt}
+\begin{tabularx}{\linewidth}{@{}>{\raggedright\arraybackslash}l>{\centering\arraybackslash}X>{\centering\arraybackslash}X}
+\toprule
+ & \multicolumn{1}{c}{lag1} & \multicolumn{1}{c}{return} \\
+\cmidrule(lr){2-2} \cmidrule(lr){3-3}
+ & (1) & (2) \\
+\midrule
+\addlinespace[1ex]
+twitter_sent & \makecell{2.348 \\ (0.225)} &  \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag1 &  & \makecell{-0.322 \\ (0.196)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag2 &  & \makecell{0.088 \\ (0.196)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag3 &  & \makecell{-0.225 \\ (0.192)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag5 &  & \makecell{-0.285 \\ (0.175)} \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+sent_lag7 &  & \makecell{0.222 \\ (0.166)} \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+ticker & x & x \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[1ex]
+Observations & 159,606 & 156,589 \\
+\addlinespace[0.5ex]
+\addlinespace[0.5ex]
+$R^2$ & 0.003 & 0.002 \\
+\addlinespace[0.5ex]
+\bottomrule
+\end{tabularx}
+\endgroup
+\noindent\begin{minipage}{\linewidth}\smallskip\footnotesize
+Placebo: lag1 $\sim$ twitter\_sent $|$ ticker. No-reversal: all sentiment lags estimated jointly. Only sent\_lag1 should be significant under a causal interpretation (Gu \& Kurov, 2020).\end{minipage}
+
+\end{threeparttable}
+```
+
+**Lag decay.** Table 5 estimates each lag separately in a univariate DoubleML specification. The results fail the no-reversal test comprehensively, meaning all lagged sentiment variables — at lags 1, 2, 3, 5, and 7 — are highly significant (p < 0.001) and negative for both Twitter and news sentiment. Because there is no decay pattern, this means that rises in price are likely due to factors other than tweets or news (being the result of more permanent information or performance), or that reverse causality is in effect and price changes are driving social media sentiment.
+
+**Table 5: Lag Decay — Lagged Sentiment and Current Return (DoubleML PLR)**
+
+```latex
+\begin{table}[htbp]
+\centering
+\caption{Lag Decay --- Lagged Sentiment and Current Return (DoubleML PLR)}
+\begin{tabular}{llcccc}
+\hline\hline
+Treatment & Lag & Coefficient & Std Err & p-value & 95\% CI \\
+\hline
+news\_sent & 1 & -1.169012*** &  & 0.0000 & [-1.446810, -0.888520] \\
+twitter\_sent & 1 & -1.215320*** &  & 0.0000 & [-1.520064, -0.910576] \\
+news\_sent & 2 & -0.793453*** &  & 0.0000 & [-1.037684, -0.543157] \\
+twitter\_sent & 2 & -0.957274*** &  & 0.0000 & [-1.243073, -0.672875] \\
+news\_sent & 3 & -1.363310*** &  & 0.0000 & [-1.551271, -1.177750] \\
+twitter\_sent & 3 & -1.122099*** &  & 0.0000 & [-1.411447, -0.832751] \\
+news\_sent & 5 & -0.942506*** &  & 0.0000 & [-1.129350, -0.755663] \\
+twitter\_sent & 5 & -1.126149*** &  & 0.0000 & [-1.396626, -0.856494] \\
+news\_sent & 7 & -0.638419*** &  & 0.0000 & [-0.817363, -0.459343] \\
+twitter\_sent & 7 & -0.674264*** &  & 0.0000 & [-0.960148, -0.385289] \\
+\hline
+Estimator & \multicolumn{5}{l}{DoubleML PLR, XGBoost (GPU), 5-fold, 20 reps} \\
+\hline\hline
+\multicolumn{6}{l}{\footnotesize \textit{Notes:} Each lag estimated separately (univariate). Outcome: current-day return. BASE\_CONFOUNDERS excludes contemporaneous sentiment to avoid endogeneity. XGBoost learner, 5-fold, 20 reps, 1000 bootstrap draws. *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
+```
+
+**Impact persistence.** Table 6 estimates the effect of current sentiment on future returns. Under the hypothesis that tweet effects decay quickly (within 2–3 days) while news effects persist, `twitter_sent` should be most significant at lag 1 and insignificant thereafter. The results show it insignificant at every lag.  Also, while for `news_sent` there are significant estimators, the signs are inconsistent.  Taken together, this tells me that while twitter sentiment is likely moot in the eyes of traders, news varies based on how the specific content of the news matters to traders.  Likely, important information is conveyed that does not tip the sentiment scales highly but is of value for determining tradability of stocks (eg, exposure to a new regulation in a given industry).
+
+**Table 6: Impact Persistence — Current Sentiment and Future Return (DoubleML PLR)**
+
+```latex
+\begin{table}[htbp]
+\centering
+\caption{Impact Persistence --- Current Sentiment and Future Return (DoubleML PLR)}
+\begin{tabular}{llcccc}
+\hline\hline
+Treatment & Lead & Coefficient & Std Err & p-value & 95\% CI \\
+\hline
+news\_sent & 1 & -0.357017** &  & 0.0186 & [-0.657748, -0.059756] \\
+twitter\_sent & 1 & -0.111458 &  & 0.6094 & [-0.537107, 0.316047] \\
+news\_sent & 2 & 0.311669*** &  & 0.0090 & [0.074430, 0.545631] \\
+twitter\_sent & 2 & 0.217330 &  & 0.3008 & [-0.194791, 0.628997] \\
+news\_sent & 3 & -0.226585* &  & 0.0575 & [-0.457798, 0.007184] \\
+twitter\_sent & 3 & -0.071248 &  & 0.7282 & [-0.480987, 0.330521] \\
+news\_sent & 5 & -0.215964* &  & 0.0578 & [-0.438797, 0.007146] \\
+twitter\_sent & 5 & -0.033204 &  & 0.8668 & [-0.420425, 0.354753] \\
+news\_sent & 7 & 0.342398*** &  & 0.0026 & [0.112941, 0.565643] \\
+twitter\_sent & 7 & 0.027558 &  & 0.8938 & [-0.375978, 0.432329] \\
+\hline
+Estimator & \multicolumn{5}{l}{DoubleML PLR, XGBoost (GPU), 5-fold, 20 reps} \\
+\hline\hline
+\multicolumn{6}{l}{\footnotesize \textit{Notes:} Each lead estimated separately. Outcome: return\_lead$n$ (return $n$ days ahead). Hypothesis: twitter\_sent decays by lead 2--3; news\_sent persists to lead 5--7 (Gu \& Kurov 2020). XGBoost learner, 5-fold, 20 reps, 1000 bootstrap draws. *** p$<$0.01, ** p$<$0.05, * p$<$0.1.} \\
+\end{tabular}
+\end{table}
+```
+
+---
+
+## Summary and Next Steps
+
+While the DoubleML results are interesting, the conflicting signals and failure of the reverse causality tests are deeply concerning.  The current evidence points towards price driving tweets, and not the otehr way around.  This seems to contradict past studies where teams have found an effect from tweets.  I will review their methods and see if I can replicate them in this case.  It may also be the case, that traders no longer use twitter as much as before, or that its role as an information source has declined.  I can look at differences across different time periods as well to see if that possibility holds.
+
+In any case, the current evidence indicates that twitter holds little influecne over daily price changes, and that the news is a stronger indicator of price fluctuations.
