@@ -1,0 +1,155 @@
+\documentclass[12pt]{article}
+
+\usepackage{booktabs}
+\usepackage{tabularx}
+\usepackage{threeparttable}
+\usepackage{makecell}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{geometry}
+\usepackage{setspace}
+\usepackage{parskip}
+
+\geometry{margin=1in}
+\onehalfspacing
+
+\begin{document}
+
+\noindent\textbf{Ashley Thompson}\\
+\textbf{Date: Apr 15, 2026}
+
+\bigskip
+
+\noindent\textbf{Goal from Previous Class:}
+
+Complete the Gu \& Kurov (2020) replication and run all core regression specifications: return predictability (Table 2), the no-reversal test (Table 3), Twitter versus news sentiment (Table 5), and the long-short trading strategy (Table 6).
+
+\bigskip
+
+\noindent\textbf{Progress:}
+
+\noindent\textit{Gu \& Kurov Replication --- Completed.}
+
+I completed the full Gu \& Kurov (2020) replication this week. Gu \& Kurov use Fama-MacBeth (1973) cross-sectional regressions to test whether lagged Twitter sentiment predicts open-to-open stock returns. Their key finding is a significant positive predictive effect that passes a no-reversal test --- only the 1-day lag is significant, consistent with information being fully absorbed within one trading day. I replicated all four of their core tables using Bloomberg daily sentiment data for a sample of S\&P 500 firms over 2024--2025.
+
+\medskip
+
+\noindent\textit{Table 2 --- Return Predictability.}
+
+The core Fama-MacBeth specification regresses open-to-open return on one-day lagged Twitter sentiment, controlling for five lags each of return, abnormal volume, Rogers-Satchell realized volatility, log market capitalization, and bid-ask spread. The raw return specification encountered a rank-deficiency issue in the design matrix (under investigation), so I report results using risk-adjusted returns (Fama-French four-factor residuals). The risk-adjusted coefficient on lagged Twitter sentiment is $-$0.036 and is not statistically significant. This is directionally opposite to Gu \& Kurov's original finding ($+$0.136***) and far smaller in magnitude. Twitter sentiment does not predict the next day's open-to-open return in the current sample.
+
+% ── Insert Table 2 ──────────────────────────────────────────────────────────
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 2: Return Predictability}
+\label{tab:gk_t2}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Raw Return & (2) Risk-Adj \\
+\hline
+twitter\_sent\_lag1 & --- & $-$0.035763 \\
+ & --- & (0.049027) \\
+\hline
+Estimator & Fama-MacBeth & Fama-MacBeth \\
+SE & Newey-West (5) & Newey-West (5) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Fama-MacBeth. Newey-West SEs (5 lags). Open-to-open return. Controls: 5 lags each of return, abnorm\_vol, vol\_rs, log\_mkt\_cap, bid-ask spread. Raw return column omitted due to rank deficiency under investigation. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\medskip
+
+\noindent\textit{Table 3 --- No-Reversal Test.}
+
+All five sentiment lags (1 through 5) are entered jointly. Under the Gu \& Kurov hypothesis, only lag 1 should be significant --- the sign of information absorbed and priced within one trading day. None of the lag coefficients are statistically significant. The pattern is inconclusive, mirroring the no-reversal result from my own FE robustness checks. The sentiment signal, if it exists, cannot be isolated once lags are jointly conditioned on each other.
+
+% ── Insert Table 3 ──────────────────────────────────────────────────────────
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 3: No-Reversal Test}
+\label{tab:gk_t3}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Raw Return & (2) Risk-Adj \\
+\hline
+twitter\_sent\_lag1 & --- & $-$0.019642 \\
+ & --- & (0.051289) \\
+twitter\_sent\_lag2 & --- & $+$0.007938 \\
+ & --- & (0.058235) \\
+twitter\_sent\_lag3 & --- & $-$0.042867 \\
+ & --- & (0.061926) \\
+twitter\_sent\_lag4 & --- & $-$0.055565 \\
+ & --- & (0.059190) \\
+twitter\_sent\_lag5 & --- & $-$0.017594 \\
+ & --- & (0.054279) \\
+\hline
+Estimator & Fama-MacBeth & Fama-MacBeth \\
+SE & Newey-West (5) & Newey-West (5) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} All lags entered jointly. Pass criterion: lag 1 significant, lags 2--5 insignificant (Gu \& Kurov, 2020). Result: inconclusive --- no lag is significant. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\medskip
+
+\noindent\textit{Table 5 --- Twitter vs.\ News Sentiment.}
+
+Neither Twitter sentiment nor news sentiment is statistically significant, whether entered separately or jointly. The joint model attenuates both coefficients slightly, consistent with their modest positive correlation. This extends the earlier FE and DoubleML finding that news sentiment is the stronger predictor --- here, even news loses significance in the Fama-MacBeth framework, suggesting the predictive power of news may be concentrated in within-firm variation that cross-sectional regressions do not capture.
+
+% ── Insert Table 5 ──────────────────────────────────────────────────────────
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 5: Twitter vs.\ News Sentiment}
+\label{tab:gk_t5}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) News Only & (2) Twitter + News \\
+\hline
+twitter\_sent\_lag1 & --- & $-$0.031707 \\
+ & --- & (0.048244) \\
+news\_sent\_lag1 & $-$0.023583 & $-$0.015916 \\
+ & (0.047295) & (0.046690) \\
+\hline
+Estimator & Fama-MacBeth & Fama-MacBeth \\
+SE & Newey-West (5) & Newey-West (5) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Both sentiments use 1-day lag. Risk-adjusted open-to-open return. Low correlation implies largely orthogonal information channels. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\medskip
+
+\noindent\textit{Table 6 --- Long-Short Trading Strategy.}
+
+A daily strategy that goes long the top sentiment decile and short the bottom decile generates a mean daily return of 0.066\%, an annualized return of 16.70\%, and a Sharpe ratio of 1.66 over 329 trading days --- before transaction costs. Gu \& Kurov report an annualized Sharpe of 3.17 over their 2015--2017 sample. The gap is notable, but the strategy still produces economically meaningful returns. The win rate of 52.9\% indicates only marginal directional accuracy. One interpretation: cross-sectional sentiment sorting retains some profitability even when the time-series predictive coefficient is insignificant --- a result worth noting in the paper.
+
+% ── Insert Table 6 ──────────────────────────────────────────────────────────
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 6: Long-Short Trading Strategy}
+\label{tab:gk_t6}
+\begin{tabular}{lc}
+\hline\hline
+Statistic & Value \\
+\hline
+Mean daily L-S return (\%) & 0.0663 \\
+Annualized return (\%) & 16.70 \\
+Annualized Sharpe & 1.66 \\
+Win rate & 52.9\% \\
+Trading days & 329 \\
+\hline\hline
+\multicolumn{2}{p{0.7\linewidth}}{\footnotesize \textit{Notes:} Long (short) = top (bottom) decile daily Twitter sentiment. 24-hour hold. Before transaction costs. Gu \& Kurov (2020) report Sharpe of 3.17 over Jan 2015--Feb 2017 (537 days).}
+\end{tabular}
+\end{table}
+
+\bigskip
+
+\noindent\textbf{Reflection:}
+
+The Gu \& Kurov results reinforce the consistent theme across this entire project: Twitter sentiment does not reliably predict stock returns in the current sample. This holds across FE, DoubleML, pooled OLS (Teti), and now Fama-MacBeth (Gu \& Kurov). The one partial exception remains the polarity-weighted $\text{ts\_b}$ index in the Teti SET 3 specification, which showed a marginally significant interaction at lag 1 for large-cap firms. The long-short Sharpe of 1.66 --- roughly half the original paper's figure --- is interesting because it suggests the cross-sectional ordering of sentiment still contains some signal, even if the average predictive slope is statistically flat. This could indicate that the effect of Twitter is more idiosyncratic (firm-specific) than systematic, and that aggregating to a daily composite score washes out the signal. A more granular, entity-specific approach --- the focus of the custom sentiment tool in development --- may recover what the Bloomberg composite obscures.
+
+\bigskip
+
+\noindent\textbf{Question:} The raw return Fama-MacBeth model fails with a rank-deficiency error even after filtering zero-variance dates and regressors. The risk-adjusted version runs cleanly on the same dates. Is there a preferred method for handling rank-deficient cross-sectional design matrices in Fama-MacBeth, or should I document this as a data limitation and proceed with risk-adjusted returns only?
+
+\end{document}
