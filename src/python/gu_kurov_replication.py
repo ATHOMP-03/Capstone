@@ -60,6 +60,14 @@ long = pd.read_csv(src, parse_dates=["date"])
 long = long.sort_values(["ticker", "date"]).reset_index(drop=True)
 print(f"Loaded {len(long):,} rows x {long.shape[1]} cols from {src.name}")
 
+# Truncate to Feb 28 2026 — last available date in Ken French's data library.
+# Bloomberg data extends into April 2026; the gap creates date-level NaN in the
+# FF factors which produces sparse cross-sections and division-by-zero in FMB.
+FF_CUTOFF = pd.Timestamp("2026-02-28")
+long = long[long["date"] <= FF_CUTOFF].reset_index(drop=True)
+print(f"Truncated to FF cutoff ({FF_CUTOFF.date()}): {len(long):,} rows remaining, "
+      f"last date = {long['date'].max().date()}")
+
 # ---------------------------------------------------------------------------
 # Check which extended columns are present
 # ---------------------------------------------------------------------------

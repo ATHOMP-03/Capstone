@@ -286,10 +286,171 @@ Estimator & \multicolumn{5}{l}{DoubleML PLR, XGBoost (GPU), 5-fold, 20 reps} \\
 \end{table}
 
 \newpage
+\section{Teti et al.\ (2019) Replication}
+
+Teti et al.\ (2019) examine whether Twitter sentiment predicts open-to-close stock returns using a panel of S\&P 500 firms, with a key focus on heterogeneous effects by firm size. Their central finding is that large-cap firms --- which attract disproportionate social media attention --- exhibit stronger sentiment--return linkages than small-cap firms. To replicate this, I run three sets of models using Bloomberg's daily Twitter sentiment and count data.
+
+\textbf{SET 1 --- Pooled OLS.} Table~\ref{tab:teti_set1} presents the pooled OLS specifications. Model 1 (baseline Twitter sentiment only) produces a small negative coefficient of $-$0.013, which is not statistically significant. This aligns with the FE results in Section 2. Model 3, which adds news sentiment as a co-treatment, shows \texttt{news\_sent} is strongly significant at $-$0.122 ($p < 0.01$), while \texttt{twitter\_sent} remains flat. Model 4 includes both simultaneously: the pattern holds. News sentiment dominates; Twitter sentiment adds nothing beyond it. This is a consistent theme across all specifications so far.
+
+\begin{table}[htbp]
+\centering
+\caption{Teti et al.\ (2019) Replication --- SET 1: Pooled OLS}
+\label{tab:teti_set1}
+\begin{tabular}{lcc}
+\hline\hline
+Variable & Coefficient & (SE) \\
+\hline
+twitter\_sent (M1) & $-$0.012693 & (0.049061) \\
+news\_sent (M3) & $-$0.122355*** & (0.031498) \\
+twitter\_sent (M4) & $+$0.031176 & (0.049217) \\
+news\_sent (M4) & $-$0.127532*** & (0.031600) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} HC3-robust SEs. Dependent variable: pct open-to-close return. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\textbf{SET 2 --- Panel FE with Binary Treatment.} Table~\ref{tab:teti_set2} reports the key heterogeneity coefficient $\beta_3$ from the interaction of lagged Twitter sentiment with a binary group indicator (\texttt{group = 1} if a firm's median market cap exceeds the cross-sectional median). None of the interaction terms are statistically significant at any lag. The signs alternate and the magnitudes are small relative to their standard errors. This is a null result: large-cap firms do not exhibit a measurably different sentiment--return relationship than small-cap firms in this sample.
+
+\begin{table}[htbp]
+\centering
+\caption{Teti et al.\ (2019) Replication --- SET 2: Panel FE Binary Treatment ($\beta_3$ only)}
+\label{tab:teti_set2}
+\begin{tabular}{lcc}
+\hline\hline
+Variable & Coefficient & (SE) \\
+\hline
+ts\_lag\_0 $\times$ group & $+$0.058211 & (0.102712) \\
+ts\_lag\_1 $\times$ group & $+$0.023445 & (0.089829) \\
+ts\_lag\_2 $\times$ group & $-$0.051080 & (0.088592) \\
+ts\_lag\_3 $\times$ group & $-$0.030345 & (0.086143) \\
+ts\_lag\_4 $\times$ group & $+$0.029466 & (0.084418) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Heteroskedasticity-robust SEs. Entity FE. \texttt{group = 1} if ticker median market cap $\geq$ cross-sectional median. \texttt{group} dropped from formula (collinear with entity FE); identification from interaction only. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\textbf{SET 3 --- Polarity-Weighted Index ($\text{ts\_b}$).} Table~\ref{tab:teti_set3} replaces the Bloomberg composite sentiment score with a custom polarity-weighted index $\text{ts\_b} = (\text{pos} - \text{neg}) / (\text{pos} + \text{neg} + \text{neu})$, which more precisely captures directional sentiment by normalizing for tweet volume. The lag-1 interaction term \texttt{tsb\_lag\_1} $\times$ \texttt{group} is marginally significant at $+$0.073 ($p < 0.10$). This is the first result in the replication to show any differentiation by firm size: larger firms appear to experience a slightly stronger positive return response to prior-day directional Twitter sentiment. However, the result is weak, does not persist beyond lag 1, and should be interpreted with caution.
+
+\begin{table}[htbp]
+\centering
+\caption{Teti et al.\ (2019) Replication --- SET 3: Polarity-Weighted Index ($\text{ts\_b}$)}
+\label{tab:teti_set3}
+\begin{tabular}{lcc}
+\hline\hline
+Variable & Coefficient & (SE) \\
+\hline
+tsb\_lag\_0 $\times$ group & $+$0.060172 & (0.045303) \\
+tsb\_lag\_1 $\times$ group & $+$0.072803* & (0.044166) \\
+tsb\_lag\_2 $\times$ group & $-$0.044018 & (0.046582) \\
+tsb\_lag\_3 $\times$ group & $-$0.030662 & (0.045037) \\
+tsb\_lag\_4 $\times$ group & $-$0.014102 & (0.044444) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} $\text{ts\_b} = (\text{pos} - \text{neg}) / (\text{pos} + \text{neg} + \text{neu})$. Heteroskedasticity-robust SEs. Entity FE. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\newpage
+\section{Gu \& Kurov (2020) Replication}
+
+Gu \& Kurov (2020) use Fama-MacBeth (1973) cross-sectional regressions to examine whether lagged Twitter sentiment predicts open-to-open returns --- the appropriate return window given that Bloomberg releases Twitter sentiment at 9:20am, allowing execution at the 9:30am open. Their key finding is a significant positive predictive effect ($b \approx 0.136$) that passes a no-reversal test: only lag 1 is significant, consistent with information being fully absorbed within one trading day. I replicate their three core tests using risk-adjusted returns (Fama-French four-factor residuals), as the raw return specification encounters a rank-deficiency issue in the design matrix that is under investigation.
+
+\textbf{Table 2 --- Return Predictability.} Table~\ref{tab:gk_t2} estimates the core Fama-MacBeth specification: open-to-open return on one-day lagged Twitter sentiment, controlling for five lags each of return, abnormal volume, Rogers-Satchell volatility, log market cap, and bid-ask spread. The risk-adjusted coefficient is $-$0.036 and is not statistically significant. This is directionally opposite to Gu \& Kurov's finding ($+$0.136***), and the magnitude is far smaller. The result suggests that in the current sample, lagged Twitter sentiment does not predict the next trading day's open-to-open return after controlling for known risk factors.
+
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 2: Return Predictability}
+\label{tab:gk_t2}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Raw Return & (2) Risk-Adj \\
+\hline
+twitter\_sent\_lag1 & --- & $-$0.035763 \\
+ & --- & (0.049027) \\
+\hline
+Estimator & Fama-MacBeth & Fama-MacBeth \\
+SE & Newey-West (5) & Newey-West (5) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Fama-MacBeth. Newey-West SEs (5 lags). Open-to-open return. Controls: 5 lags each of return, abnorm\_vol, vol\_rs, log\_mkt\_cap, bid-ask spread. Raw return column omitted due to rank deficiency under investigation. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\textbf{Table 3 --- No-Reversal Test.} Table~\ref{tab:gk_t3} enters all five sentiment lags jointly. Under the Gu \& Kurov hypothesis, only lag 1 should be significant; significance at lags 3--5 would indicate reverse causality or momentum. All five lag coefficients are small and statistically insignificant. The inconclusive pattern here mirrors the no-reversal result from Section~4 (FE robustness): the sentiment signal, if it exists, cannot be isolated once lags are jointly conditioned on each other.
+
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 3: No-Reversal Test}
+\label{tab:gk_t3}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) Raw Return & (2) Risk-Adj \\
+\hline
+twitter\_sent\_lag1 & --- & $-$0.019642 \\
+ & --- & (0.051289) \\
+twitter\_sent\_lag2 & --- & $+$0.007938 \\
+ & --- & (0.058235) \\
+twitter\_sent\_lag3 & --- & $-$0.042867 \\
+ & --- & (0.061926) \\
+twitter\_sent\_lag4 & --- & $-$0.055565 \\
+ & --- & (0.059190) \\
+twitter\_sent\_lag5 & --- & $-$0.017594 \\
+ & --- & (0.054279) \\
+\hline
+Estimator & Fama-MacBeth & Fama-MacBeth \\
+SE & Newey-West (5) & Newey-West (5) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} All lags entered jointly. Pass criterion: lag 1 significant, lags 2--5 insignificant (Gu \& Kurov, 2020). Result: inconclusive --- no lag is significant. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\textbf{Table 5 --- Twitter vs.\ News Sentiment.} Table~\ref{tab:gk_t5} compares the predictive power of Twitter and news sentiment, both separately and jointly. Neither channel is statistically significant in any specification. The joint model attenuates both coefficients slightly, consistent with a modest positive correlation between the two sentiment series. Gu \& Kurov report a contemporaneous correlation of approximately 0.20 between Twitter and news sentiment; the pattern of attenuation in the joint model is consistent with this, even though neither estimate clears conventional significance thresholds here.
+
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 5: Twitter vs.\ News Sentiment}
+\label{tab:gk_t5}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) News Only & (2) Twitter + News \\
+\hline
+twitter\_sent\_lag1 & --- & $-$0.031707 \\
+ & --- & (0.048244) \\
+news\_sent\_lag1 & $-$0.023583 & $-$0.015916 \\
+ & (0.047295) & (0.046690) \\
+\hline
+Estimator & Fama-MacBeth & Fama-MacBeth \\
+SE & Newey-West (5) & Newey-West (5) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Both sentiments use 1-day lag. Risk-adjusted open-to-open return. Low correlation implies largely orthogonal information channels. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}
+\end{tabular}
+\end{table}
+
+\textbf{Table 6 --- Long-Short Trading Strategy.} Table~\ref{tab:gk_t6} reports the performance of a daily long-short strategy that goes long the top-decile and short the bottom-decile of Twitter sentiment each day, holding for 24 hours. The strategy generates a mean daily return of 0.066\%, translating to an annualized return of 16.70\% and a Sharpe ratio of 1.66. Gu \& Kurov report an annualized Sharpe of 3.17 over their 2015--2017 sample. The gap is notable: our Sharpe is roughly half theirs, though the strategy still produces economically meaningful returns before transaction costs. The win rate of 52.9\% indicates only marginal directional accuracy. One interpretation is that the sentiment signal retains some cross-sectional sorting power even when its time-series predictive coefficient is insignificant --- a pattern consistent with the Fama-MacBeth framework, where cross-sectional spread drives strategy returns independently of the average time-series slope.
+
+\begin{table}[htbp]
+\centering
+\caption{Gu \& Kurov (2020) Replication --- Table 6: Long-Short Trading Strategy}
+\label{tab:gk_t6}
+\begin{tabular}{lc}
+\hline\hline
+Statistic & Value \\
+\hline
+Mean daily L-S return (\%) & 0.0663 \\
+Annualized return (\%) & 16.70 \\
+Annualized Sharpe & 1.66 \\
+Win rate & 52.9\% \\
+Trading days & 329 \\
+\hline\hline
+\multicolumn{2}{p{0.7\linewidth}}{\footnotesize \textit{Notes:} Long (short) = top (bottom) decile daily Twitter sentiment. 24-hour hold. Before transaction costs. Gu \& Kurov (2020) report Sharpe of 3.17 over Jan 2015--Feb 2017 (537 days).}
+\end{tabular}
+\end{table}
+
+\newpage
 \section{Summary and Next Steps}
 
-While the DoubleML results are interesting, the conflicting signals and failure of the reverse causality tests are deeply concerning. The current evidence points toward price driving tweets, and not the other way around. This seems to contradict past studies where teams have found an effect from tweets. I will review their methods and see if I can replicate them in this case. It may also be the case that traders no longer use Twitter as much as before, or that its role as an information source has declined. Examining differences across different time periods may shed light on this possibility.
+The results across all specifications and replications tell a consistent story: Twitter sentiment, as measured by Bloomberg's composite daily score, does not reliably predict stock returns in this sample. The FE and DoubleML estimates in Sections 2--4 find no significant effect. The Teti et al.\ replication finds null results in SET 1 and SET 2, with only a marginal signal in SET 3 (the polarity-weighted $\text{ts\_b}$ index interacted with firm size at lag 1, $p < 0.10$). The Gu \& Kurov replication finds no significant return predictability in the Fama-MacBeth framework, and a long-short Sharpe ratio of 1.66 --- economically interesting but well below the 3.17 reported in the original paper.
 
-In any case, the current evidence indicates that Twitter holds little influence over daily price changes, and that news is a stronger indicator of price fluctuations.
+News sentiment, by contrast, consistently emerges as a significant predictor: it is significant in FE Model 2, in the Teti pooled OLS, and in the DoubleML PLR. This asymmetry between Twitter and news is meaningful. It may reflect a decline in Twitter's role as an information source since the 2015--2017 period studied by Gu \& Kurov, or it may reflect the noisier nature of social media relative to structured news feeds. It may also be that Bloomberg's composite Twitter sentiment score, which aggregates across all tweets for a firm in a day, obscures the signal that would be present in more granular or entity-specific tweet data.
+
+Several avenues remain open. First, the raw return rank-deficiency issue in the Gu \& Kurov Fama-MacBeth models warrants a targeted diagnostic. Second, DoubleML robustness checks for both replications (lagged treatments, impact persistence, no-reversal joint tests) are underway. Third, and most substantively, a custom sentiment analysis tool is in development that will enable filtering by specific individuals or entities and precise tweet timing --- an approach that may recover the causal signal that composite daily scores appear to obscure.
 
 \end{document}
