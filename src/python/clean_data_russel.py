@@ -1,12 +1,15 @@
 """
-clean_data.py
-Loads Bloomberg data from .xlsx, pivots to long format, removes NaNs,
-computes daily returns and lags, and saves to data/processed/panel_long_extended.csv.
+clean_data_russel.py
+Loads Bloomberg Russell 3000 data from .xlsx, pivots to long format, removes NaNs,
+computes daily returns and lags, and saves to data/processed/russel_panel.csv.
+
+UPDATE RAW_FILE below to match your Bloomberg export filename.
 
 Output columns (one row per ticker x trading day):
   date, ticker, px_open, px_close, px_high, px_low, mkt_cap, total_equity,
   debt_to_equity, volume, twitter_sent, twitter_count, news_sent,
   rsi_30, ma_50, twitter_neg_count, bid_ask_spread, twitter_neu_count,
+  vol_30d, news_pos_count, news_neg_count, twitter_pos_count,
   return, lag1, lag2, lag3, lag5, lag7
 """
 
@@ -15,11 +18,11 @@ import numpy as np
 from pathlib import Path
 
 # ---------------------------------------------------------------------------
-# Paths
+# Paths — UPDATE RAW_FILE to match your Bloomberg export filename
 # ---------------------------------------------------------------------------
-ROOT      = Path(__file__).resolve().parents[2]
-RAW_FILE  = ROOT / "data" / "raw" / "Bloomberg_Historic_Data.xlsx"
-OUT_FILE  = ROOT / "data" / "processed" / "panel_long_extended.csv"
+ROOT     = Path(__file__).resolve().parents[2]
+RAW_FILE = ROOT / "data" / "raw" / "bloomberg_russel_3000.xlsx"   # <-- update as needed
+OUT_FILE = ROOT / "data" / "processed" / "russel_panel.csv"
 
 OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 
@@ -28,7 +31,10 @@ OUT_FILE.parent.mkdir(parents=True, exist_ok=True)
 # BLOCK 1 — LOAD & PIVOT
 # ===========================================================================
 
-raw = pd.read_excel(RAW_FILE, header=None, engine="openpyxl")
+if RAW_FILE.suffix.lower() in (".xlsx", ".xls"):
+    raw = pd.read_excel(RAW_FILE, header=None, engine="openpyxl")
+else:
+    raw = pd.read_csv(RAW_FILE, header=None)
 
 # Row 3 (0-indexed): ticker names, one per 14-column block
 # Row 5 (0-indexed): Bloomberg field codes (PX_OPEN, PX_CLOSE, ...)
@@ -66,8 +72,7 @@ for name in col_names:
         unique_names.append(name)
 dat.columns = unique_names
 
-# Smart date parsing — new Bloomberg exports store dates as datetime objects;
-# older exports store them as Excel serial integers. Handle both.
+# Smart date parsing — handle datetime objects and Excel serial integers
 date_raw = dat.iloc[:, 0]
 if pd.api.types.is_datetime64_any_dtype(date_raw) or hasattr(date_raw.dropna().iloc[0], "year"):
     dat["date"] = pd.to_datetime(date_raw, errors="coerce").dt.normalize()
@@ -143,8 +148,7 @@ long = long.dropna(subset=["px_open", "px_close"]).reset_index(drop=True)
 # BLOCK 3 — DERIVED FIELDS
 # ===========================================================================
 
-# twitter_neu_count: Bloomberg provides pos and neg counts but not neutral.
-# Impute as total minus pos minus neg, clipped at 0.
+# twitter_neu_count: impute as total minus pos minus neg, clipped at 0
 if {"twitter_pos_count", "twitter_neg_count", "twitter_count"}.issubset(long.columns):
     long["twitter_neu_count"] = (
         long["twitter_count"] - long["twitter_pos_count"] - long["twitter_neg_count"]

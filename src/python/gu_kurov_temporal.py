@@ -44,10 +44,14 @@ OUT_DIR.mkdir(parents=True, exist_ok=True)
 # ---------------------------------------------------------------------------
 # Load data
 # ---------------------------------------------------------------------------
+FF_CUTOFF = pd.Timestamp("2026-02-28")   # last available Ken French factor date
+
 src  = EXT_FILE if EXT_FILE.exists() else IN_FILE
 long = pd.read_csv(src, parse_dates=["date"])
+long = long[long["date"] <= FF_CUTOFF].reset_index(drop=True)
 long = long.sort_values(["ticker", "date"]).reset_index(drop=True)
 print(f"Loaded {len(long):,} rows x {long.shape[1]} cols from {src.name}")
+print(f"Date range after FF cutoff: {long['date'].min().date()} to {long['date'].max().date()}")
 
 HAS_SPREAD = "bid_ask_spread" in long.columns
 
@@ -398,3 +402,217 @@ for _, r in ann.iterrows():
 print("\nDone. Output files:")
 for freq in ["monthly", "quarterly", "annual"]:
     print(f"  data/processed/gk_temporal_{freq}.csv")
+
+
+# ===========================================================================
+# PLOTS — three separate two-panel figures (one per frequency)
+# ===========================================================================
+
+import matplotlib
+matplotlib.use("Agg")          # non-interactive backend for script use
+import matplotlib.pyplot as plt
+import matplotlib.dates as mdates
+
+FIG_DIR = ROOT / "output" / "figures"
+FIG_DIR.mkdir(parents=True, exist_ok=True)
+
+
+def prep_plot(df: pd.DataFrame) -> pd.DataFrame:
+    d = df.copy()
+    d["t"] = pd.to_datetime(d["window_start"])
+    d = d.dropna(subset=["fmb_coef", "fmb_se", "fmb_pval"])
+    return d.sort_values("t")
+
+
+def plot_temporal(df: pd.DataFrame, freq_label: str, color: str,
+                  lw: float, marker, out_name: str) -> None:
+    d = prep_plot(df)
+    if d.empty:
+        print(f"  [SKIP] No valid data for {freq_label}.")
+        return
+
+    fig, (ax1, ax2) = plt.subplots(
+        2, 1, figsize=(12, 7), sharex=True,
+        gridspec_kw={"height_ratios": [3, 2]}
+    )
+    fig.subplots_adjust(hspace=0.25)
+
+    t    = d["t"]
+    coef = d["fmb_coef"]
+    se   = d["fmb_se"]
+    pval = d["fmb_pval"]
+
+    # Panel 1 — coefficient ± 1 SE
+    ax1.axhline(0, color="black", linewidth=0.8, linestyle="-", alpha=0.4)
+    ax1.plot(t, coef, color=color, linewidth=lw,
+             marker=marker, markersize=5 if marker else 0, alpha=0.9,
+             label=freq_label)
+    ax1.fill_between(t, coef - se, coef + se, color=color, alpha=0.15)
+    ax1.set_ylabel("FMB coefficient\n(twitter_sent_lag1)", fontsize=10)
+    ax1.set_title(
+        f"Twitter Sentiment Predictability Over Time — {freq_label} Windows\n"
+        f"Gu & Kurov (2020) Specification",
+        fontsize=11, fontweight="bold"
+    )
+    ax1.tick_params(axis="x", labelsize=9)
+
+    # Panel 2 — p-value
+    ax2.axhline(0.10, color="#444444", linewidth=0.8, linestyle="--", alpha=0.6)
+    ax2.axhline(0.05, color="#444444", linewidth=0.8, linestyle=":",  alpha=0.6)
+    t_left = t.iloc[0] - pd.Timedelta(days=10)
+    ax2.text(t_left, 0.105, "p = 0.10", fontsize=8, color="#555555",
+             va="bottom", ha="right")
+    ax2.text(t_left, 0.055, "p = 0.05", fontsize=8, color="#555555",
+             va="bottom", ha="right")
+    ax2.plot(t, pval, color=color, linewidth=lw,
+             marker=marker, markersize=5 if marker else 0, alpha=0.9)
+    ax2.set_ylim(0, 1.0)
+    ax2.set_ylabel("p-value", fontsize=10)
+    ax2.set_xlabel("Time", fontsize=10)
+    ax2.xaxis.set_major_formatter(mdates.DateFormatter("%Y"))
+    ax2.xaxis.set_major_locator(mdates.YearLocator())
+    ax2.tick_params(axis="x", labelsize=9)
+
+    fig.tight_layout()
+    save_path = FIG_DIR / out_name
+    fig.savefig(save_path, dpi=150, bbox_inches="tight")
+    plt.close(fig)
+    print(f"  Saved {save_path}")
+
+
+print("\n\nGenerating figures...")
+monthly_df   = results["monthly"]
+quarterly_df = results["quarterly"]
+annual_df    = results["annual"]
+
+plot_temporal(annual_df,    "Annual",    "#111111", 2.0, "o",  "gk_temporal_annual.png")
+plot_temporal(quarterly_df, "Quarterly", "#444444", 1.5, "s",  "gk_temporal_quarterly.png")
+plot_temporal(monthly_df,   "Monthly",   "#888888", 0.9, None, "gk_temporal_monthly.png")
+
+
+# ===========================================================================
+# LATEX EXPORTS
+# ===========================================================================
+
+TEX_OUT = ROOT / "output"
+TEX_OUT.mkdir(parents=True, exist_ok=True)
+
+
+def st(p) -> str:
+    if pd.isna(p): return ""
+    if p < 0.01: return "***"
+    if p < 0.05: return "**"
+    if p < 0.10: return "*"
+    return ""
+
+
+def fmt(v, decimals=4) -> str:
+    return f"{v:.{decimals}f}" if not pd.isna(v) else "---"
+
+
+# 1. Figure environments (three)
+FREQ_FIGS = [
+    ("annual",    "gk_temporal_annual.png",
+     "Annual windows (one observation per calendar year). "
+     r"Bandwidth = 5 lags; minimum cross-section $N = 30$."),
+    ("quarterly", "gk_temporal_quarterly.png",
+     "Quarterly windows. "
+     r"Bandwidth = 4 lags; minimum cross-section $N = 20$."),
+    ("monthly",   "gk_temporal_monthly.png",
+     "Monthly windows. "
+     r"Bandwidth = 3 lags; minimum cross-section $N = 15$."),
+]
+
+tex_fig_parts = []
+for freq, fname, note in FREQ_FIGS:
+    tex_fig_parts.append(
+        r"\begin{figure}[htbp]" + "\n"
+        r"\centering" + "\n"
+        f"\\includegraphics[width=\\linewidth]{{figures/{fname}}}" + "\n"
+        r"\caption{Twitter Sentiment Predictability Over Time --- "
+        f"Gu \\& Kurov (2020) Specification ({freq.capitalize()} windows). "
+        r"Top panel: Fama-MacBeth coefficient on \texttt{twitter\_sent\_lag1} "
+        r"with $\pm$1 SE band. Bottom panel: associated $p$-value; dashed lines "
+        r"at $p = 0.10$ and $p = 0.05$. "
+        + note + r"}" + "\n"
+        f"\\label{{fig:gk_temporal_{freq}}}" + "\n"
+        r"\end{figure}"
+    )
+
+tex_fig = "\n\n".join(tex_fig_parts)
+(TEX_OUT / "gk_temporal_fig.tex").write_text(tex_fig)
+print("Saved gk_temporal_fig.tex  (3 figure environments)")
+
+# 2. FMB regression table (annual)
+ann = annual_df.copy()
+fmb_rows = []
+for _, r in ann.iterrows():
+    sig = st(r["fmb_pval"])
+    n   = f"{int(r['n_obs']):,}" if not pd.isna(r["n_obs"]) else "---"
+    fmb_rows.append(
+        f"  {r['window_label']} & ${fmt(r['fmb_coef'])}{sig}$ "
+        f"& $({fmt(r['fmb_se'])})$ & ${fmt(r['fmb_pval'])}$ & {n} \\\\"
+    )
+
+tex_fmb = (
+    r"\begin{table}[htbp]" + "\n"
+    r"\centering" + "\n"
+    r"\caption{FMB Return Predictability by Year --- "
+    r"Gu \& Kurov (2020) Specification}" + "\n"
+    r"\label{tab:gk_fmb_annual}" + "\n"
+    r"\begin{tabular}{lcccc}" + "\n"
+    r"\hline\hline" + "\n"
+    r"Year & Coef & (SE) & $p$-value & $N$ \\" + "\n"
+    r"\hline" + "\n"
+    + "\n".join(fmb_rows) + "\n"
+    + r"\hline\hline" + "\n"
+    + r"\multicolumn{5}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} "
+    + r"Fama-MacBeth regression with Newey-West SEs (bandwidth = 5). "
+    + f"Dependent variable: \\texttt{{{DEP_VAR}}}. "
+    + r"Treatment: \texttt{twitter\_sent\_lag1}. "
+    + r"Controls: 5 lags each of return, abnorm\_vol, vol\_rs, log\_mkt\_cap"
+    + (r", bid\_ask\_spread" if HAS_SPREAD else "") + r". "
+    + r"*** $p<0.01$, ** $p<0.05$, * $p<0.1$.} \\" + "\n"
+    + r"\end{tabular}" + "\n"
+    + r"\end{table}"
+)
+(TEX_OUT / "gk_temporal_fmb.tex").write_text(tex_fmb)
+print("Saved gk_temporal_fmb.tex")
+
+# 3. Long-short strategy table (annual)
+ls_rows = []
+for _, r in ann.iterrows():
+    n_days = int(r["ls_n_days"]) if not pd.isna(r["ls_n_days"]) else "---"
+    ls_rows.append(
+        f"  {r['window_label']} "
+        f"& {fmt(r['ls_mean_daily'], 4)} "
+        f"& {fmt(r['ls_ann_return'], 2)} "
+        f"& {fmt(r['ls_sharpe'], 2)} "
+        f"& {fmt(r['ls_win_rate'], 3)} "
+        f"& {n_days} \\\\"
+    )
+
+tex_ls = (
+    r"\begin{table}[htbp]" + "\n"
+    r"\centering" + "\n"
+    r"\caption{Long-Short Strategy Performance by Year --- "
+    r"Gu \& Kurov (2020) Specification}" + "\n"
+    r"\label{tab:gk_ls_annual}" + "\n"
+    r"\begin{tabular}{lccccc}" + "\n"
+    r"\hline\hline" + "\n"
+    r"Year & Mean Daily (\%) & Ann. Return (\%) & Sharpe & Win Rate & Days \\" + "\n"
+    r"\hline" + "\n"
+    + "\n".join(ls_rows) + "\n"
+    + r"\hline\hline" + "\n"
+    + r"\multicolumn{6}{p{0.95\linewidth}}{\footnotesize \textit{Notes:} "
+    + r"Daily long-short portfolio. Long (short) = top (bottom) decile of contemporaneous "
+    + r"Twitter sentiment. 24-hour holding period (open-to-open). "
+    + r"Sharpe ratio annualized assuming 252 trading days. Before transaction costs. "
+    + r"Gu \& Kurov (2020) report Sharpe = 3.17 over Jan 2015--Feb 2017.} \\" + "\n"
+    + r"\end{tabular}" + "\n"
+    + r"\end{table}"
+)
+(TEX_OUT / "gk_temporal_ls.tex").write_text(tex_ls)
+print("Saved gk_temporal_ls.tex")
+
+print(f"\nAll LaTeX outputs written to {TEX_OUT}")
