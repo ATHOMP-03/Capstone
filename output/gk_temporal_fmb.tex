@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\centering
+\caption{FMB Return Predictability by Year --- Gu \& Kurov (2020) Specification}
+\label{tab:gk_fmb_annual}
+\begin{tabular}{lcccc}
+\hline\hline
+Year & Coef & (SE) & $p$-value & $N$ \\
+\hline
+  2016 & $0.0070$ & $(0.0269)$ & $0.7936$ & 115,924 \\
+  2017 & $-0.0217$ & $(0.0308)$ & $0.4803$ & 114,704 \\
+  2018 & $-0.0551$ & $(0.0661)$ & $0.4046$ & 118,329 \\
+  2019 & $0.1869$ & $(0.1636)$ & $0.2534$ & 118,956 \\
+  2020 & $-0.3258$ & $(0.3039)$ & $0.2837$ & 119,143 \\
+  2021 & $0.2488$ & $(0.1907)$ & $0.1920$ & 116,928 \\
+  2022 & $0.0583$ & $(0.0406)$ & $0.1505$ & 121,390 \\
+  2023 & $-0.0395$ & $(0.0821)$ & $0.6301$ & 118,689 \\
+  2024 & $0.0116$ & $(0.0656)$ & $0.8597$ & 118,117 \\
+  2025 & $0.0108$ & $(0.0886)$ & $0.9029$ & 116,147 \\
+  2026 (Jan-Feb) & $-0.0897$ & $(0.2844)$ & $0.7526$ & 12,462 \\
+\hline\hline
+\multicolumn{5}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Fama-MacBeth regression with Newey-West SEs (bandwidth = 5). Dependent variable: \texttt{return_oo_adj}. Treatment: \texttt{twitter\_sent\_lag1}. Controls: 5 lags each of return, abnorm\_vol, vol\_rs, log\_mkt\_cap, bid\_ask\_spread. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.} \\
+\end{tabular}
+\end{table}
