@@ -1,0 +1,151 @@
+% draft_data.tex
+% Style: Academic Paper
+% Target: 2--3 pages (~1,200--1,600 words of body text)
+
+\section{Data}
+\label{sec:data}
+
+\subsection{Source and Sample Construction}
+\label{sec:data_source}
+
+All data are sourced from the Bloomberg Terminal via the Bloomberg Desktop API (\texttt{blpapi}).
+The sample universe consists of firms in the S\&P~500 index as of the initial pull date, yielding
+503 unique equity securities identified by their Bloomberg ticker (e.g., \texttt{AAPL US Equity}).
+I construct two panel datasets:
+
+\begin{enumerate}
+    \item \textbf{Primary panel.} Daily observations from January~1, 2025 through March~25, 2026,
+    comprising 160,487 firm-day observations. This panel contains the full set of treatment,
+    outcome, and control variables used in the FE-OLS and DoubleML specifications.
+
+    \item \textbf{Extended panel.} Daily observations from January~1, 2016 through February~27,
+    2026, comprising approximately 1.19~million firm-day observations. This panel contains a
+    reduced variable set (prices, volume, market capitalization, sentiment scores) and is used
+    exclusively for the temporal analysis that replicates \citet{gu2020} across rolling windows.
+\end{enumerate}
+
+Non-trading days (weekends, holidays) are excluded by dropping observations where both opening
+and closing prices are missing. Bloomberg-specific missing value codes (\texttt{\#N/A N/A},
+\texttt{\#N/A Field Not Applicable}) are recoded as \texttt{NA} prior to any numerical
+transformation.
+
+\subsection{Variable Definitions}
+\label{sec:data_variables}
+
+Table~\ref{tab:variables} defines all variables used in the analysis. Variables fall into four
+categories: outcome, treatment, controls, and derived.
+
+\begin{table}[htbp]
+\centering
+\caption{Variable Definitions}
+\label{tab:variables}
+\small
+\begin{tabular}{lll}
+\hline\hline
+Variable & Bloomberg Field & Definition \\
+\hline
+\multicolumn{3}{l}{\textit{Outcome}} \\
+\texttt{return} & --- & $\text{px\_close}_{it} - \text{px\_open}_{it}$ (open-to-close price change, \$) \\
+\addlinespace[0.5ex]
+\multicolumn{3}{l}{\textit{Treatment}} \\
+\texttt{twitter\_sent}       & \texttt{TWITTER\_SENTIMENT\_DAILY\_AVG}  & Firm-day Twitter sentiment score ($[-1, 1]$) \\
+\texttt{twitter\_neg\_count} & \texttt{TWITTER\_NEG\_SENTIMENT\_COUNT}  & Count of negative-polarity tweets \\
+\texttt{news\_sent}          & \texttt{NEWS\_SENTIMENT\_DAILY\_AVG}     & Firm-day news sentiment score ($[-1, 1]$) \\
+\addlinespace[0.5ex]
+\multicolumn{3}{l}{\textit{Controls}} \\
+\texttt{px\_high}        & \texttt{PX\_HIGH}              & Intraday high price (\$) \\
+\texttt{px\_low}         & \texttt{PX\_LOW}               & Intraday low price (\$) \\
+\texttt{mkt\_cap}        & \texttt{CUR\_MKT\_CAP}         & Market capitalization (millions, \$) \\
+\texttt{total\_equity}   & \texttt{TOTAL\_EQUITY}         & Book equity (millions, \$) \\
+\texttt{debt\_to\_equity} & \texttt{TOT\_DEBT\_TO\_TOT\_EQY} & Total debt / total equity (\%) \\
+\texttt{volume}          & \texttt{PX\_VOLUME}            & Daily share volume (shares) \\
+\texttt{rsi\_30}         & \texttt{RSI\_30D}              & 30-day Relative Strength Index \\
+\texttt{ma\_50}          & \texttt{MOV\_AVG\_50D}         & 50-day moving average of price (\$) \\
+\addlinespace[0.5ex]
+\multicolumn{3}{l}{\textit{Derived}} \\
+\texttt{lag$k$}          & ---                            & $\text{return}_{i,t-k}$ for $k \in \{1,2,3,5,7\}$ \\
+\texttt{bid\_ask\_spread} & \texttt{AVERAGE\_BID\_ASK\_SPREAD} & Daily average bid-ask spread (\$) \\
+\hline\hline
+\end{tabular}
+\end{table}
+
+The dependent variable, \texttt{return}, is the raw dollar price change from market open to
+market close on day $t$ for firm $i$. This differs from the percentage return used in some prior
+studies \citep{gu2020}; the dollar denomination preserves interpretability of treatment
+coefficients as dollar-per-unit sentiment effects, and the firm fixed effects absorb
+cross-sectional differences in share price levels.
+
+The primary treatment variable, \texttt{twitter\_sent}, is Bloomberg's proprietary daily average
+Twitter sentiment score. Bloomberg applies natural language processing to the universe of public
+tweets mentioning a given firm's name, ticker, or cashtag, assigning each tweet a score on $[-1,
++1]$ and averaging across all tweets within the calendar day. The variable
+\texttt{twitter\_neg\_count} counts only those tweets classified with negative polarity, following
+the construction of \citet{teti2019}. The news sentiment variable, \texttt{news\_sent}, is
+constructed analogously from Bloomberg-sourced news articles.
+
+\subsection{Measurement Limitations}
+\label{sec:data_limitations}
+
+Three features of the Bloomberg sentiment data warrant discussion.
+
+\textbf{Proprietary classification.} Bloomberg does not disclose the dictionary, model
+architecture, or training data underlying its sentiment classification. This precludes replication
+with alternative NLP tools and prevents diagnostic checks on whether specific tweet categories
+(e.g., bot-generated, reply threads, retweets) are included or filtered. The
+\citet{loughran2011} critique of general-purpose sentiment dictionaries applies with unknown
+force: it is possible that Bloomberg's classifier misattributes domain-specific financial language.
+
+\textbf{Temporal aggregation.} The sentiment scores are daily averages. Bloomberg aggregates all
+tweets within a 24-hour window without distinguishing pre-market, intraday, and after-hours
+activity. Because the outcome variable is measured from market open to market close, a tweet
+posted at 9:00~PM after market close is counted in the same day's sentiment as one posted at
+10:00~AM. This aggregation mismatch biases the design against detecting effects from tweets that
+post-date the close, and may introduce reverse causality if after-hours tweets respond to the
+day's price action that has already been recorded in \texttt{return}.
+
+\textbf{Selection in sentiment coverage.} Not all firm-days have Twitter sentiment scores.
+Smaller firms, firms with less public visibility, or firms experiencing quiet periods may have
+fewer or no tweets classified. Missing sentiment days are not randomly distributed across firms or
+time: large-cap, high-volume firms in the technology and consumer discretionary sectors receive
+disproportionate coverage. This selection pattern means that the estimated treatment effect is
+identified primarily from firms with active social media presence and may not generalize to the
+full S\&P~500 universe. Summary statistics in Table~\ref{tab:sumstats} document the extent of
+missingness across key variables.
+
+\subsection{Sample Properties}
+\label{sec:data_sample}
+
+The primary panel spans 503 firms over approximately 320 trading days, yielding a balanced panel
+with minor gaps due to delistings, IPOs within the sample window, and missing Bloomberg fields.
+The effective sample size for the full FE-OLS specification (Model~2) drops to 147,128
+observations after listwise deletion of rows with missing controls, primarily
+\texttt{total\_equity} and \texttt{debt\_to\_equity} for newly listed firms. The baseline
+specification (Model~1, sentiment only) retains the full 160,103 observations.
+
+For the DoubleML specifications, XGBoost handles missing covariates natively---observations are
+not dropped for missing controls. However, observations with missing treatment
+(\texttt{twitter\_sent} or \texttt{news\_sent}) are necessarily excluded. The effective sample
+size for DoubleML is reported in each results table.
+
+The extended panel for temporal analysis covers 2,633 unique trading days across the same 503
+firms. Coverage of Bloomberg Twitter sentiment begins in earnest around 2017 for most firms,
+with sporadic coverage in 2016. The Fama-MacBeth regressions in the temporal analysis use only
+dates with at least 50 firms reporting non-missing sentiment, following the minimum
+cross-section requirement of \citet{gu2020}.
+
+% Pointer to summary statistics table
+% \input{output/sumstats_table.tex}
+
+
+% =========================================================
+% MISSING / EXPAND NOTES
+% =========================================================
+% [MISSING: Summary statistics table (Table~\ref{tab:sumstats}) showing mean,
+%   SD, min, p25, median, p75, max, N for all key variables. Generate from
+%   panel_long.csv and add as output/sumstats_table.tex]
+% [MISSING: Correlation matrix of treatment and control variables, or at
+%   minimum the correlation between twitter_sent and news_sent]
+% [EXPAND: Sector composition of the 503 firms — GICS sector breakdown to
+%   characterize which industries drive the panel]
+% [EXPAND: Time-series plot of daily cross-sectional mean twitter_sent to
+%   visualize sentiment dynamics over the sample period]

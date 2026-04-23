@@ -1,0 +1,192 @@
+% draft_literature_review.tex
+% Style: Academic Paper
+% Target: 3--4 pages (~1,800--2,200 words of body text)
+
+\section{Literature Review}
+\label{sec:literature}
+
+This section reviews three strands of literature that inform the present study: (1) investor
+sentiment and asset pricing, (2) social media as a financial information channel, and (3) causal
+identification in high-frequency panel settings. The paper sits at their intersection and
+contributes a formal causal framework---Double Machine Learning---to a domain that has relied
+primarily on reduced-form predictive regressions.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Investor Sentiment and Asset Pricing}
+\label{sec:lit_sentiment}
+
+The theoretical foundations for a sentiment channel in asset prices rest on limits to arbitrage.
+When a subset of traders forms expectations using noisy signals---including affect, media tone, or
+social contagion---prices can deviate from fundamental value if rational arbitrageurs face short
+selling constraints, capital limits, or noise-trader risk \citep{delong1990, shleifer1997}.
+\citet{baker2006} formalize this intuition, constructing a composite sentiment index from six
+market-based proxies and showing that high-sentiment periods predict lower subsequent returns on
+speculative stocks, consistent with initial overpricing followed by correction.
+
+Empirically, the earliest text-based evidence comes from \citet{tetlock2007}, who applies the
+Harvard-IV dictionary to the Wall Street Journal \textit{Abreast of the Market} column and finds
+that media pessimism predicts next-day downward pressure on the Dow Jones Industrial Average, with
+the effect fully reversing over the following week. \citet{tetlock2008} extend this to
+firm-specific news and show that the negative word fraction in news stories predicts quarterly
+earnings and stock returns even after controlling for prior earnings surprises. Together, these
+papers establish that text sentiment carries incremental information beyond what standard financial
+variables capture.
+
+\citet{garcia2013} builds on Tetlock's framework by documenting time-varying effects: sentiment
+extracted from the financial press is a stronger predictor of returns during recessions, when
+information asymmetry and limits to arbitrage are likely more binding. \citet{loughran2011}
+critique the use of general-purpose dictionaries in financial contexts, showing that the
+Harvard-IV negative word list misclassifies domain-specific terms (e.g., ``liability,'' ``tax''),
+and propose a finance-specific alternative that improves return prediction accuracy. This
+measurement concern is directly relevant to the present study, which relies on Bloomberg's
+proprietary dictionary whose construction is not disclosed.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Social Media as a Financial Information Channel}
+\label{sec:lit_social_media}
+
+A second strand of literature examines social media specifically as a venue for price-relevant
+information transmission, distinct from traditional news outlets. The seminal contribution is
+\citet{antweiler2004}, who analyze 1.5 million messages posted on Yahoo Finance and Raging Bull
+message boards and find that message volume predicts next-day trading volume and volatility, with
+a more modest link to returns. Their work establishes that user-generated financial discussion
+contains informational content, but leaves open whether the effect is economically large or
+causal.
+
+\citet{bollen2011} shift the focus from message boards to Twitter. Using Google Profile of Mood
+States (GPOMS) to extract six mood dimensions from public tweets, they report that the ``calm''
+dimension Granger-causes changes in the DJIA with a lag of two to three days. Their approach is
+aggregate---a single daily mood time series rather than firm-level variation---which limits
+identification but demonstrates the existence of a predictive link between Twitter affect and
+market movements.
+
+\citet{chen2014} move to the firm level, examining posts on the Seeking Alpha investment platform.
+They find that the tone of articles and, more strikingly, the tone of reader comments predicts
+earnings surprises and subsequent abnormal returns, even after controlling for sell-side analyst
+recommendations and traditional media tone. This suggests that the ``wisdom of crowds'' in social
+media may reflect private information not yet incorporated in prices.
+
+Two papers provide the most direct empirical antecedents for the present study.
+\citet{gu2020} use firm-level daily Twitter sentiment from a commercial data provider to predict
+open-to-open stock returns in a Fama-MacBeth framework over January 2015 to February 2017. Their
+key results are: (i) a significant positive coefficient on one-day lagged Twitter sentiment
+($+0.136^{***}$); (ii) a no-reversal test showing only lag~1 is significant when lags 1--5 are
+entered jointly; and (iii) a profitable long-short strategy with an annualized Sharpe ratio of
+3.17. These findings are interpreted as evidence that Twitter sentiment conveys firm-specific
+information that is absorbed within one trading day. The present paper replicates the Gu and Kurov
+specifications on a more recent sample (2024--2025) and finds substantially weaker effects,
+suggesting possible temporal decay in the Twitter signal.
+
+\citet{teti2019} examine Twitter data for 30 DJIA firms and find that the daily count of tweets
+with negative polarity predicts stock returns. Their approach is pooled OLS with firm clustering,
+and they introduce polarity-broken count variables (positive tweets, negative tweets, total
+tweets) as an alternative to continuous sentiment scores. The present paper borrows their negative
+tweet count construction (\texttt{twitter\_neg\_count}) and tests it alongside continuous
+sentiment within the DoubleML framework.
+
+More recent contributions expand the social media perimeter. \citet{cookson2023} use disagreement
+across social media platforms (Twitter, StockTwits, Seeking Alpha) as a proxy for belief
+dispersion and show that cross-platform disagreement predicts trading volume and return
+volatility, suggesting that the informational content of social media is heterogeneous across
+venues. \citet{bartov2018} find that aggregate Twitter opinion before quarterly earnings
+announcements predicts announcement returns, suggesting that the Twitter crowd partially
+anticipates earnings surprises. These findings collectively support the hypothesis that social
+media contains price-relevant information, but they also highlight the difficulty of distinguishing
+information from noise and causation from correlation.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Causal Identification in High-Frequency Panels}
+\label{sec:lit_causal}
+
+The studies reviewed above document predictive associations between sentiment measures and asset
+returns. Whether these associations are causal is a distinct question that requires different
+tools. The identification challenge is twofold: first, time-varying confounders---news events,
+macroeconomic releases, institutional order flow---jointly drive both sentiment and prices;
+second, reverse causality is plausible because large price movements generate social media
+discussion, creating an endogenous feedback loop.
+
+The standard approach to the first problem is panel fixed effects, which absorbs time-invariant
+firm characteristics. This is the workhorse strategy in \citet{gu2020} and \citet{teti2019}, as
+well as in the present paper's FE-OLS specifications. Fixed effects eliminate bias from stable
+cross-sectional differences in sentiment coverage or trading clientele, but they do not address
+time-varying confounders that are correlated with both sentiment and returns within a given firm.
+Adding observable controls (news sentiment, momentum indicators, capital structure) partially
+mitigates this concern, but only under the functional-form assumptions of OLS---specifically,
+linearity in the confounder--outcome and confounder--treatment relationships.
+
+The Double Machine Learning framework of \citet{chernozhukov2018} relaxes these functional-form
+assumptions. The Partially Linear Regression (PLR) model assumes:
+%
+\begin{align}
+    Y_{it} &= \theta_0 D_{it} + g_0(X_{it}) + U_{it}, \quad E[U_{it} \mid D_{it}, X_{it}] = 0 \label{eq:plr_outcome} \\
+    D_{it} &= m_0(X_{it}) + V_{it}, \quad E[V_{it} \mid X_{it}] = 0 \label{eq:plr_treatment}
+\end{align}
+%
+where $Y_{it}$ is the return, $D_{it}$ is the sentiment treatment, $X_{it}$ is the
+high-dimensional confounder vector, and $\theta_0$ is the causal parameter of interest. The
+nuisance functions $g_0(\cdot)$ and $m_0(\cdot)$ are estimated nonparametrically via machine
+learning (here, XGBoost), and the Neyman-orthogonal score ensures that estimation error in the
+nuisance functions does not contaminate inference on $\theta_0$ at $\sqrt{n}$ rates
+\citep{chernozhukov2018}. Cross-fitting (sample splitting) prevents overfitting bias.
+
+The DML framework has been applied in labor economics \citep{belloni2014}, program evaluation
+\citep{knaus2021}, and demand estimation, but applications in empirical finance remain sparse.
+\citet{fan2022} apply DML to predict bond returns with macroeconomic controls.
+\citet{chetverikov2021} develop high-dimensional panel data methods in a related spirit. To my
+knowledge, the present paper is the first to apply DoubleML specifically to intraday social media
+sentiment and stock returns.
+
+The second identification challenge---reverse causality---is more difficult. Instrumental
+variables are a natural candidate, but credible instruments for social media sentiment are scarce:
+potential instruments (e.g., platform outages, algorithmic feed changes) are rare, endogenous to
+firm-level activity, or affect sentiment through channels that also affect prices directly. In the
+absence of instruments, this paper adopts a placebo design: if sentiment is purely forward-looking
+(information $\to$ prices), then today's sentiment should not predict yesterday's return. A large,
+significant coefficient in this reverse regression is evidence of feedback---sentiment responding
+to prior price movements---and constitutes a falsification test for the causal interpretation of
+the forward estimates. This design follows the logic of Granger non-causality tests adapted for
+panel settings, as in \citet{holtz-eakin1988}.
+
+% ─────────────────────────────────────────────────────────────────────────────
+\subsection{Positioning the Present Study}
+\label{sec:lit_positioning}
+
+The present paper sits at the intersection of these three literatures. It takes the research
+question and variable constructions from the social media--finance literature (\citealt{gu2020};
+\citealt{teti2019}), applies identification strategies from the causal inference literature
+(\citealt{chernozhukov2018}), and contributes to the broader debate about whether investor
+sentiment has real pricing effects (\citealt{baker2006}; \citealt{tetlock2007}). Three features
+distinguish it from prior work:
+
+\begin{enumerate}
+    \item \textbf{Formal causal framework.} The DoubleML PLR estimator relaxes linearity
+    assumptions that constrain prior FE and Fama-MacBeth estimates, providing a coefficient that
+    is interpretable as a causal partial effect under the assumption that the confounder vector
+    $X_{it}$ is sufficient for conditional exogeneity.
+
+    \item \textbf{Reverse causality diagnostics.} Rather than assuming the direction of causation,
+    the paper explicitly tests for it through a placebo regression and lag-structure analysis.
+    The finding that the reverse coefficient ($+2.348$) exceeds the forward estimate ($-0.924$)
+    in absolute value disciplines the causal interpretation throughout.
+
+    \item \textbf{Updated sample period.} Prior Twitter-returns studies concentrate on 2011--2017,
+    a period of rapid social media adoption. The present sample (2024--2025) captures a more
+    mature informational environment in which algorithmic trading, bot activity, and information
+    saturation may have attenuated the retail sentiment channel. The temporal comparison with
+    \citet{gu2020} is informative about the stability of the Twitter effect over time.
+\end{enumerate}
+
+
+% =========================================================
+% MISSING / EXPAND NOTES
+% =========================================================
+% [MISSING: .bib file. New keys required for this section: delong1990,
+%   shleifer1997, baker2006, tetlock2008, garcia2013, loughran2011,
+%   chen2014, bartov2018, belloni2014, knaus2021, fan2022,
+%   chetverikov2021, holtz-eakin1988, cookson2023]
+% [EXPAND: If the custom sentiment tool is further developed, add a
+%   paragraph on entity-specific NLP approaches (FinBERT, domain-adapted
+%   transformers) as a distinct methodological thread.]
+% [EXPAND: Could add discussion of event-study approaches (e.g., Sprenger
+%   et al. 2014 on S&P 500 tweets) if additional identification contrast
+%   is desired.]

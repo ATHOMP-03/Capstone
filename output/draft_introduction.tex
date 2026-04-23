@@ -1,0 +1,116 @@
+% draft_introduction.tex
+% Style: Academic Paper
+% Target: 2--3 pages (~1,400--1,800 words of body text)
+
+\section{Introduction}
+\label{sec:introduction}
+
+Does social media sentiment causally affect intraday stock price movements? This paper provides
+evidence on that question using a daily Bloomberg panel of S\&P~500 firms over 2024--2025,
+employing two identification strategies---firm fixed-effects OLS and Double Machine Learning
+(DoubleML)---to estimate the effect of Twitter/X sentiment on open-to-close returns.
+
+The question matters for two reasons. First, the structure of retail equity participation has
+changed. The share of U.S. equity volume attributable to retail traders roughly doubled between
+2010 and 2020 \citep{welch2022}, and platforms such as Twitter/X, Reddit, and StockTwits have
+become primary venues through which retail investors form expectations and coordinate trading
+activity \citep{cookson2023}. Whether the information transmitted over these platforms is
+efficiently incorporated into prices---or whether it induces noise-driven mispricing---has direct
+implications for market quality, regulatory oversight, and the design of disclosure rules. Second,
+the causal question remains empirically open. A substantial literature documents that
+text-derived sentiment correlates with subsequent returns \citep{tetlock2007, bollen2011,
+antweiler2004}, but correlation is not causation. Firms that attract more social media attention
+may differ systematically from those that do not; sentiment itself may simply respond to price
+changes rather than cause them. Resolving this requires identification strategies capable of
+isolating the sentiment effect from confounders and from reverse causality.
+
+Prior work has taken steps in this direction. \citet{tetlock2007} shows that the fraction of
+negative words in the Wall Street Journal \textit{Abreast of the Market} column predicts
+next-day Dow Jones returns and trading volume, with the effect reversing within a week. Building
+on this media-sentiment literature, \citet{antweiler2004} find that message board activity on
+Yahoo Finance and Raging Bull predicts next-day volatility and, more modestly, returns.
+\citet{bollen2011} report that Twitter mood states---extracted from a large corpus of public
+tweets---improve the accuracy of next-day DJIA forecasts, with calm and happy states preceding
+market advances. More recently, \citet{gu2020} use Fama-MacBeth cross-sectional regressions to
+show that lagged Twitter sentiment predicts open-to-open stock returns in a 2015--2017 sample,
+with the effect concentrated at a one-day lag consistent with rapid information absorption.
+\citet{teti2019} examine the relationship between daily tweet counts, polarity-broken tweet
+volumes, and stock-level returns, finding that negative tweet counts predict returns at short
+horizons. These studies provide the empirical template for the present analysis.
+
+The gap that motivates this paper is causal identification. The studies cited above rely on
+reduced-form regressions---OLS, panel FE, Fama-MacBeth---that account for observable confounders
+but are not designed to partial out high-dimensional nonlinear relationships among controls. When
+the confounder set includes variables like intraday price range, momentum indicators, capital
+structure ratios, and multiple sentiment channels simultaneously, the linearity assumption
+embedded in OLS can bias the treatment coefficient in ways that are difficult to diagnose. More
+fundamentally, the direction of causation between social media sentiment and stock prices is not
+settled: sentiment may drive prices, prices may drive sentiment, or both may respond to the same
+latent shock. None of the prior literature addresses this directly with a formal placebo design.
+
+This paper makes two contributions. The first is methodological. By applying the Partially Linear
+Regression (PLR) model of \citet{chernozhukov2018}, combined with XGBoost as a nuisance learner,
+I obtain a Neyman-orthogonal estimate of the sentiment effect that is asymptotically unconfounded
+by high-dimensional covariates, regardless of the functional form of their relationship with the
+treatment and outcome. The DoubleML estimator achieves this by cross-fitting: nuisance models for
+both $E[\text{twitter\_sent} \mid X]$ and $E[\text{return} \mid X]$ are trained on held-out folds,
+so the final coefficient is not contaminated by in-sample overfitting. This is, to my knowledge,
+the first application of DoubleML to intraday Twitter sentiment and stock returns.
+
+The second contribution is the systematic documentation of a reverse causality concern. I pair the
+primary DoubleML estimates with a firm-level placebo test that regresses yesterday's return on
+today's Twitter sentiment. Under the null of no reverse causation, this coefficient should be
+indistinguishable from zero. It is not: the estimated coefficient is $+2.348$ ($p < 0.01$),
+substantially larger in magnitude than any of the forward-looking estimates. This result is
+inconsistent with clean causal transmission from sentiment to prices and raises the possibility
+that Bloomberg's proprietary sentiment measure largely reflects the market's own prior-day
+behavior rather than an independent information signal. Additional lag-decay and impact-persistence
+tests reinforce this interpretation.
+
+The main findings can be summarized as follows. In the firm fixed-effects specifications (four
+models, $N \approx 160{,}000$ firm-day observations), \texttt{twitter\_sent} is statistically
+insignificant across all treatment constructions, including continuous sentiment, a
+negative-clipped measure, and negative tweet counts. News sentiment (\texttt{news\_sent}) enters
+with a coefficient of $-1.056$ ($p < 0.01$) and the RSI-30 momentum indicator is significant,
+suggesting that within-firm variation in price-relevant news and momentum dominate the Twitter
+channel in a linear framework. In the DoubleML specifications, the picture is noisier but more
+significant. The PLR estimate for \texttt{twitter\_sent} is $-0.924$ ($p < 0.01$), and the
+estimate for \texttt{news\_sent} is $-0.759$ ($p < 0.01$). These estimates survive 20 repetitions
+of 5-fold cross-fitting with 1{,}000 bootstrap draws. The negative direction of the Twitter
+coefficient is consistent with a ``bad news amplification'' interpretation, but the magnitude is
+economically modest and the placebo evidence makes causal attribution fragile.
+
+A partial replication of \citet{gu2020} using Fama-MacBeth regressions on risk-adjusted
+(four-factor) returns produces a coefficient on lagged Twitter sentiment of $-0.036$, which is
+insignificant and directionally opposite to the original paper's $+0.136^{***}$. A long-short
+strategy sorting on daily sentiment deciles generates an annualized Sharpe ratio of 1.66 over 329
+trading days---roughly half the Sharpe of 3.17 reported in the original 2015--2017 sample. Taken
+together, these comparisons suggest that the predictive content of Twitter sentiment for stock
+returns may have declined materially since the period studied by \citet{gu2020}, a possibility
+examined through temporal analysis in Section~\ref{sec:results}.
+
+The remainder of the paper proceeds as follows. Section~\ref{sec:literature} reviews the relevant
+literature on sentiment and asset pricing, social media as an information channel, and causal
+identification in high-frequency panels. Section~\ref{sec:data} describes the Bloomberg panel,
+variable construction, and sample properties. Section~\ref{sec:methodology} presents the FE-OLS
+and DoubleML specifications with full notation and identifying assumptions.
+Section~\ref{sec:results} reports point estimates, robustness checks, and the placebo and
+lag-structure tests. Section~\ref{sec:discussion} interprets the central tension between the
+DoubleML estimates and the reverse causality evidence, and places the findings in the context of
+prior literature. Section~\ref{sec:conclusion} concludes with limitations and directions for
+future work, including a custom entity-level sentiment tool that may isolate causally relevant
+signal from the Bloomberg composite.
+
+
+% =========================================================
+% MISSING / EXPAND NOTES
+% =========================================================
+% [MISSING: \bibliography{} entry -- no .bib file exists yet.
+%   Required keys: gu2020, teti2019, tetlock2007, bollen2011, antweiler2004,
+%   chernozhukov2018, welch2022, cookson2023, baker2006, da2011, chen2014,
+%   famaMacbeth1973]
+% [EXPAND: If a sample period table or summary statistics figure is added
+%   to the Data section, consider adding one sentence here stating the
+%   observation window explicitly (currently "2024--2025").]
+% [EXPAND: If a temporal analysis subsection finds a structural break,
+%   revisit the paragraph on Gu & Kurov decline to add the break date.]
