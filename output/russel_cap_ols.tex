@@ -1,0 +1,29 @@
+\begin{table}[htbp]
+\centering
+\caption{Panel OLS: Twitter Sentiment $\times$ Market Cap --- Russell 3000}
+\label{tab:russel_cap_ols}
+\begin{tabular}{lccccc}
+\hline\hline
+ & (1) Full & (2) Full+Int. & (3) Large & (4) Mid & (5) Small \\
+\hline
+\addlinespace[1ex]
+twitter\_sent & $0.7081***$ & $1.9411***$ & $0.3754***$ & $0.8044***$ & $0.9421***$ \\
+ & $(0.0572)$ & $(0.7431)$ & $(0.0228)$ & $(0.0362)$ & $(0.1854)$ \\
+\addlinespace[0.5ex]
+log\_mkt\_cap & $-0.0496$ & $-0.0469$ & $-0.0476***$ & $-0.0089$ & $-0.1246$ \\
+ & $(0.0566)$ & $(0.0580)$ & $(0.0089)$ & $(0.0138)$ & $(0.1621)$ \\
+\addlinespace[0.5ex]
+twitter\_sent $\times$ log\_mkt\_cap & --- & $-0.1476*$ & --- & --- & --- \\
+ &  & $(0.0824)$ &  &  &  \\
+\addlinespace[0.5ex]
+\midrule
+\addlinespace[0.5ex]
+Firm FE & Yes & Yes & Yes & Yes & Yes \\
+\addlinespace[0.5ex]
+Observations & 1,972,274 & 1,972,274 & 763,274 & 640,932 & 568,068 \\
+\addlinespace[0.5ex]
+$R^2$ (within) & 0.001 & 0.001 & 0.001 & 0.003 & 0.002 \\
+\hline\hline
+\multicolumn{6}{p{0.95\linewidth}}{\footnotesize \textit{Notes:} Panel OLS with firm fixed effects. Clustered SEs (by entity) in parentheses. Dependent variable: \texttt{return_oo_adj}. Columns (3)--(5) restrict to cap group defined by average \texttt{{mkt\_cap}}: Large $>\$10$B, Mid \$2B--\$10B, Small $<\$2$B. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}}
+\end{tabular}
+\end{table}

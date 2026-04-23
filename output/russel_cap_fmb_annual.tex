@@ -1,0 +1,23 @@
+\begin{table}[htbp]
+\centering
+\caption{FMB Return Predictability by Year and Cap Group --- Russell 3000}
+\label{tab:russel_cap_fmb_annual}
+\begin{tabular}{lccc}
+\hline\hline
+Year & Large (>\$10B) & Mid (\$2B--10B) & Small (<\$2B) \\
+\hline
+2016 & $-0.0237$ & $0.1218***$ & $0.1986**$ \\
+2017 & $0.0093$ & $-0.0099$ & $-0.1242$ \\
+2018 & $0.1711***$ & $0.4334***$ & $0.5563***$ \\
+2019 & $0.1548***$ & $0.5093***$ & $0.8149***$ \\
+2020 & $0.1634*$ & $0.3635***$ & $0.6860**$ \\
+2021 & $0.3188**$ & $0.4752*$ & $1.3119$ \\
+2022 & --- & --- & --- \\
+2023 & $0.0744$ & $0.8995$ & $0.5897*$ \\
+2024 & --- & --- & --- \\
+2025 & $0.0535$ & $0.3523**$ & $0.6738**$ \\
+2026 (Jan-Feb) & $-0.2834*$ & $0.5591*$ & $0.6817$ \\
+\hline\hline
+\multicolumn{4}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Fama-MacBeth coefficient on \texttt{twitter\_sent\_lag1} by cap group and year. Dependent variable: \texttt{return_oo_adj}. Controls: 5 lags each of return, abnorm\_vol, vol\_rs, log\_mkt\_cap, bid\_ask\_spread (5 lags each). Newey-West SEs. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.} \\
+\end{tabular}
+\end{table}
