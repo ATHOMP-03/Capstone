@@ -1,0 +1,18 @@
+\begin{table}[htbp]
+\centering
+\caption{Twitter vs.\ News Sentiment (2016--2017) --- Russell 3000}
+\label{tab:russel_2016_t5}
+\begin{tabular}{lcc}
+\hline\hline
+ & (1) News Only & (2) Twitter + News \\
+\hline
+twitter\_sent\_lag1 & --- & $0.0131$ \\
+                     & --- & $(0.0292)$ \\
+news\_sent\_lag1    & $-0.0106$ & $-0.0135$ \\
+                     & $(0.0202)$ & $(0.0200)$ \\
+\hline
+Estimator & Fama-MacBeth & Fama-MacBeth \\
+SE & Newey-West (5) & Newey-West (5) \\
+\hline\hline
+\multicolumn{3}{p{0.9\linewidth}}{\footnotesize \textit{Notes:} Both sentiments use 1-day lag. Risk-adjusted open-to-open return. *** $p<0.01$, ** $p<0.05$, * $p<0.1$.}\n\end{tabular}
+\end{table}
