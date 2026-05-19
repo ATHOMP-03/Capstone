@@ -1,30 +1,70 @@
-# What’s the cost of bad press? The impact of social media chatter on share prices.
+# Is Twitter for the Birds?
+### Estimating the Causal Effect of Twitter (X) Sentiment on Stock Returns
 
-## Research question
-Do social media postings impact the value of a company, and to what extent? I will explore the causal impact of adverse social media exposure on a company’s value as indicated by share prices. 
+**Ashley Thompson** — University of San Francisco, May 2026
 
+---
 
-## Motivation 
-Social media is one of the most common avenues for people to receive information; however, its impacts beyond simple entertainment are still largely unknown.  Here, I wish to explore how social media impacts publicly traded companies, which has been only minimally explored academically.  This project serves to expand academic understanding of the influence of social media, as well as providing a new economic tool for assessing and predicting share prices.
+## Research Question
 
+Does Twitter (X) sentiment causally affect intraday stock returns, and does that effect vary by firm size?
 
-## Expected contribution 
-By identifying a causal relationship between social media postings and share price, I seek to contribute to the small body of research on how press influences price.  Furthermore, by quantifying the causal effect of negative social media on share prices, I will offer a useful predictive tool for assessing the damage done by negative social media exposure that can be used for analysis or prediction. 
+---
 
+## Key Findings
 
-## Preliminary literature context
-Using Social Media to Identify the Effects of Congressional Viewpoints on Asset Prices
-Teti, E., Dallocchio, M., & Aniasi, A. (2019). The relationship between twitter and stock prices. Evidence from the US technology industry. Technological Forecasting and Social Change, 149, 119747. https://doi.org/10.1016/j.techfore.2019.119747
+- **S&P 500 (large-cap):** No statistically significant effect of Twitter sentiment on same-day returns in any calendar year from 2016–2025 using linear regression. The null result is informative, not a failure of statistical power.
+- **Russell 3000 (cap-group decomposition):** Sentiment coefficients increase as cap size decreases - large cap (+0.375) to mid cap (+0.804) to small cap (+0.942). This is consistent with an information-environment hypothesis where Twitter fills some of the analyst coverage gap for smaller firms.
+- **DoubleML (S&P 500 primary spec):** Significant negative coefficient (−0.924, p < 0.01) after nonparametric confounding control via XGBoost, suggesting a real but small signal that is potentially worth investigating further.
+- **Reverse causality:** A placebo test (yesterday's return regressed on today's sentiment) yields a large, significant coefficient (+2.348), and lag-decay CATEs remain significant at all lags 1–7 with no decay to zero, calling into question any clean causal identification using daily aggregated twitter sentiment.
 
-Nishimura, Y., & Sun, B. (2025). Impacts of Donald Trump's tweets on volatilities in the European stock markets. Finance Research Letters, 72, 106491. https://doi.org/10.1016/j.frl.2024.106491
+---
 
-Cam, H., Cam, A. V., Demirel, U., & Ahmed, S. (2024). Sentiment analysis of financial Twitter posts on Twitter with the machine learning classifiers. Heliyon, 10(1), e23784. https://doi.org/10.1016/j.heliyon.2023.e23784
+## Methods
 
-Das, S., Behera, R. K., Kumar, M., & Rath, S. K. (2018). Real-Time Sentiment Analysis of Twitter Streaming data for Stock Prediction. Procedia Computer Science, 132, 956-964. https://doi.org/10.1016/j.procs.2018.05.111
+| Method | Purpose |
+|--------|---------|
+| FE-OLS (pyfixest) | Baseline within-firm sentiment-return relationship; Models 1–4 |
+| DoubleML PLR (XGBoost) | Debiased treatment estimate; handles high-dimensional confounders nonparametrically |
+| Fama-MacBeth | Annual cross-sectional slopes; temporal stability of sentiment signal of US markets from 2016–2025 |
+| Long-short portfolio | Illustrative upper bound on sentiment-based return sorting |
+| Placebo + lag CATEs | Reverse causality diagnostics |
 
-## Data sources and feasibility
-Data will come from Bloomberg and through the APIs for Twitter and Instagram as follows:
-- Share price: Panel data on share price by company from Bloomberg
-Share price: Panel data on share price by company from Bloomberg
-Social media sentiment: Bloomberg Intelligence
-Social media sentiment analysis: Will create a tool to use natural language processing to generate a sentiment score with distribution U[-1,1]
+---
+
+## Data
+
+Three Bloomberg panel datasets:
+
+1. **Primary S&P 500 panel** (Jan 2025–Mar 2026): ~160K firm-day observations, 503 firms. Used for FE-OLS and DoubleML.
+2. **Extended S&P 500 panel** (Jan 2016–Feb 2026): ~1.19M firm-day observations. Used for temporal Fama-MacBeth analysis.
+3. **Russell 3000 panel** (Jan 2016–Feb 2026): ~1.97M firm-day observations. Used for cap-group decomposition.
+
+All data sourced via Bloomberg Desktop API (`blpapi`). Raw data is not tracked in this repository.
+
+---
+
+## Repository Structure
+
+```
+├── data/
+│   ├── raw/              # Bloomberg exports (gitignored)
+│   └── processed/        # Cleaned panels (gitignored; regenerated by clean_data*.py)
+├── notebooks/            # Colab notebooks (canonical execution)
+├── src/python/           # Python scripts (cleaning, FE-OLS, DoubleML, robustness)
+├── output/
+│   ├── draft_*.tex       # Paper sections
+│   ├── *_results.tex     # Regression tables
+│   ├── figures/          # Temporal coefficient plots
+│   └── overleaf_upload/  # Self-contained Overleaf package (master: capstone_final_v2.tex)
+└── references/           # PDFs and notes (gitignored)
+```
+
+---
+
+## Key References
+
+- Gu, S., & Kurov, A. (2020). Who responds to stock market signals? *Journal of Financial Economics*.
+- Teti, E., Dallocchio, M., & Aniasi, A. (2019). The relationship between Twitter and stock prices. *Technological Forecasting and Social Change*.
+- Chernozhukov, V., et al. (2018). Double/debiased machine learning for treatment and structural parameters. *The Econometrics Journal*.
+- Chen, H., De, P., Hu, Y., & Hwang, B. (2014). Wisdom of crowds: The value of stock opinions transmitted through social media. *Review of Financial Studies*.
