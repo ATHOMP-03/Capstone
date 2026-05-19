@@ -1,0 +1,212 @@
+% draft_discussion.tex
+% Style: Academic Paper
+% Target: ~1,400--1,600 words of body text
+% Rewritten 2026-05-17 per author structural outline
+
+\section{Discussion}\label{discussion}
+
+The findings of this study support a conditional claim: Twitter sentiment
+appears to have a meaningful predictive relationship with intraday returns, but
+that relationship is concentrated in smaller firms which attenuates sharply as
+market capitalization increases, and ultimately becomes insignificant within the S\&P 500. The hypothesis for this is
+straightforward. Twitter commentary carries potentially valuable information where formal
+analyst and media coverage is thinnest, and is largely redundant where it is
+densest. This is supported by the S\&P~500 analysis, conducted with the most rigorous identification
+tools available in this study, which returns a null result at every level of the
+temporal analysis and in every fixed-effects specification. That null result is
+not a failure of statistical power; it appears to be the correct answer for large,
+institutionally saturated firms. Taken together, the S\&P~500 and Russell~3000
+results resolve what might otherwise appear as a contradiction in prior
+literature into a unified, market-cap-conditional finding that Twitter sentiment matters when other information sources are scarce.
+
+\subsection{The Cap-Group Gradient as the Central
+Result}\label{cap-group-gradient}
+
+The Russell~3000 analysis provides the clearest evidence in support of the
+information-environment hypothesis. Partitioning the panel by market
+capitalization yields sentiment coefficients of $+0.375^{***}$ (large cap),
+$+0.804^{***}$ (mid cap), and $+0.942^{***}$ (small cap)---a monotonic
+increase in magnitude as firm size decreases
+(Table~\ref{tab:russel_cap_ols}). The sentiment-by-log-market-cap interaction
+term ($-0.148$, $p < 0.10$) confirms that this gradient is detectable within a
+single pooled regression, not merely an artifact of panel partitioning. The
+annual Fama-MacBeth series reinforces this pattern: mid- and small-cap
+coefficients are statistically significant in most years from 2016 through
+2025, while the large-cap series hovers near zero with wide confidence bands
+(Figure~\ref{fig:russel_cap_temporal_annual}).
+
+The mechanism is direct. Large S\&P~500 firms are covered by teams of analysts, trade with high institutional
+participation, and generate significant coverage in the traditional media. In that
+information environment, a daily Bloomberg Twitter sentiment average adds
+little. Small-cap firms, by contrast, may have one analyst or
+none, trade with retail investors as the primary marginal buyer, and generate
+sparse formal research. In that setting, social media discussion may be a
+primary channel through which firm-specific information reaches market
+participants --- a mechanism consistent with Chen, De, Hu, and Hwang (2014), who found
+that comment tone on Seeking Alpha predicts abnormal returns most strongly for
+firms with low analyst coverage. The gradient identified here is a direct
+empirical counterpart to that hypothesis, applied to Twitter and extended
+across the market-cap distribution. The S\&P~500 null result (no significant Fama-MacBeth coefficient in any
+calendar year from 2016 through 2025) reinforces this. A uniformly null result on large-caps, combined with a positive and
+persistent result on small-caps, is precisely what the information-environment
+hypothesis predicts. The S\&P~500 results are not a failure of the empirical
+design; they are informative evidence about where Twitter sentiment does and
+does not carry informational weight.
+
+\subsection{Cautious Support for Twitter Sentiment as a Portfolio Signal}\label{portfolio-signal}
+
+Despite the identification challenges discussed below, two results provide
+grounds for cautious confidence that Twitter sentiment contains a real
+forward-looking signal.
+
+First, the DoubleML partial linear regression on the S\&P~500 panel
+($\hat{\theta} = -0.924^{***}$, SE $= 0.226$) is precisely estimated with
+five-fold cross-fitting and confirmed stable across twenty repetitions in
+the robustness specifications (lag decay, impact persistence). The double
+machine learning estimator is Neyman-orthogonal: its coefficient on the
+treatment of interest is rendered insensitive to nuisance estimation error
+to first order, which means the result cannot be dismissed as an artifact of
+overfitting or model misspecification in the confounder stage. The signal is
+weak in economic magnitude---a one-standard-deviation increase in
+\texttt{twitter\_sent} is associated with a return reduction of approximately
+0.15 cents---but it is statistically real and survives a demanding
+nonparametric identification procedure.
+
+% [R2][R6]: Clarify that long-short performance is an illustrative upper bound.
+% If sorting uses same-day (contemporaneous) sentiment, the strategy is not
+% implementable in real time. Explicitly label as such, or confirm prior-day sort.
+Second, the long-short portfolio demonstrates positive annualized returns in nine of
+ten complete calendar years in the S\&P~500 extended panel, with Sharpe ratios
+as high as 2.04 (2023) and 1.61 (2025), even in years when the
+Fama-MacBeth coefficient on lagged sentiment is near zero
+(Table~\ref{tab:gk_ls_annual}). This coexistence resolves naturally: the
+Fama-MacBeth coefficient estimates an average cross-sectional slope across all
+firms, while the long-short strategy concentrates on the tails of the
+sentiment distribution. If the sentiment-return relationship is nonlinear, the portfolio captures
+tail dispersion while the linear regression finds a near-zero average. The
+implication for practitioners is that sentiment \emph{rankings} rather than
+sentiment levels may be the operative signal, and that any implementation
+should focus on high-conviction tail positions rather than broad linear
+allocation.
+
+Taken together, these two results suggest that the signal exists, but that its
+extraction requires methods sensitive to nonlinearity (eg. DoubleML, rank-based
+sorting) or capable of isolating specific times within the trading day.
+Any practical implementation should be approached with full awareness of the
+identification limitations described below.
+
+\subsection{Limitations}\label{limitations}
+
+\subsubsection{Control Selection and the Bad-Control Problem}
+
+The FE-OLS specifications in Table~\ref{tab:fe_ols} include \texttt{px\_high}
+and \texttt{px\_low} as regressors. These are intraday outcomes determined
+within the same trading session as the dependent variable, \texttt{return};
+they are not pre-treatment covariates. Conditioning on them introduces a
+classic bad-control problem: any variation in \texttt{twitter\_sent} that
+operates through intraday price dynamics is absorbed by these controls before
+it can be attributed to the treatment. The likely consequence is attenuation
+of the Twitter sentiment coefficient toward zero in OLS, which is consistent
+with the divergence between the insignificant FE-OLS estimate ($-0.422$, $p >
+0.10$) and the significant DoubleML estimate ($-0.924^{***}$).
+
+The DoubleML nuisance learner does not impose these variables as hard linear
+controls in the outcome equation. XGBoost can implicitly downweight features
+that are endogenous to the treatment through tree-splitting logic that
+distributes their variation nonparametrically. This implicit feature selection
+is one of the primary advantages of the PLR framework in this application.
+Future work should construct a cleaner FE-OLS specification that excludes
+same-day price path controls and restricts the covariate set to genuinely
+predetermined variables (e.g., lagged returns, lagged RSI, prior-day volume).
+Comparison of that specification to the DoubleML estimate would provide a
+cleaner test of whether the two methods converge under an appropriate control
+set. In the interim, DoubleML should be treated as the preferred estimator for
+this class of study.
+
+\subsubsection{Bloomberg Sentiment Aggregation and Temporal Identification}
+
+A second limitation is inherent to the data source. The Bloomberg Twitter
+sentiment score is a daily aggregate that averages all tweets referencing a
+firm within a 24-hour window, without distinguishing pre-market, intraday, or
+after-hours activity. This aggregation conflates two conceptually distinct
+populations of tweets: those posted before the open, which might plausibly
+cause same-day returns through pre-market information transmission, and those
+posted after large intraday moves, which are responses to prices rather than
+inputs to price formation. If the after-hours and intraday-reaction tweets
+dominate the daily average, the sentiment score is primarily a noisy
+reflection of the day's price history, which is consistent with the large
+placebo coefficient ($+2.348^{***}$) and the sign pattern in
+Table~\ref{tab:dml_pxhigh}: positive sentiment raises the intraday high but
+not the daily close, suggesting early buying pressure that reverses before the
+end of the session.
+
+Resolving this limitation requires data that the Bloomberg terminal does not
+provide. A sentiment tool capable of assigning precise timestamps to individual
+tweets (and, ideally, filtering by the identity or verified status of the
+account) would allow construction of a pre-open sentiment window that
+separates causal candidates from price-driven reactions. Such a tool would
+also enable analysis of sentiment from specific influential accounts,
+isolating high-signal sources from the ambient noise of the general Twitter
+feed. This is the desired direction of follow on studies in this area.
+
+% [R3]: News sentiment ($-0.759^{***}$ DML, $-1.056^{***}$ FE-OLS) is the paper's
+% strongest predictor but receives no discussion paragraph. Consider adding 2–3
+% sentences noting it as the more robust channel before or after this subsection.
+\subsection{Contributions to the Literature}\label{contributions}
+
+This paper makes three contributions that extend and refine the existing
+evidence.
+
+% [R2]: Verify Gu & Kurov (2020) sample universe before submission — claim that their
+% sample is "Russell 3000 firms" is load-bearing for the reconciliation argument.
+\textbf{Refinement of Gu and Kurov (2020).} Gu and Kurov (2020) document a
+significant positive effect of lagged Twitter sentiment on next-day returns
+($+0.136^{***}$) in a 2015--2017 sample of Russell~3000 firms. The present study
+finds no significant coefficient in any calendar year of the S\&P~500,
+including the overlapping years 2016 and 2017. The Russell~3000 cap-group
+decomposition however provides a resolution: the positive finding in prior work likely
+reflects smaller and mid-cap stocks included in their universe alongside
+S\&P~500 firms rather than a general large-cap effect. The cap-group gradient is
+specific enough to generate a testable prediction -- that effects should be
+recoverable in smaller-firm samples, which the Russell~3000 evidence
+confirms.
+
+\textbf{DoubleML as a viable estimator for sentiment-return studies.} This
+paper is, to the author's knowledge, the first application of the
+Chernozhukov et al.\ (2018) double machine learning PLR framework to the
+Twitter sentiment and stock return problem. The method's Neyman-orthogonality
+and cross-fitting procedure address two limitations that are common in this
+literature (in-sample overfitting in high-dimensional control settings and
+linear approximation error) and produce a formally debiased treatment
+estimate. The stability of the DoubleML estimate across repetitions and
+bootstrap draws provides a template for future high-dimensional sentiment
+studies where standard OLS is likely to understate effects due to bad-control
+inclusion and functional form misspecification.
+
+\textbf{Lag CATEs as a reverse causality screen.} The application of
+univariate DoubleML estimates at lags one through seven effectively
+estimates lagged conditional average treatment effects, and provides a rigorous
+and interpretable screen for reverse causality. The persistently significant lag pattern documented in Table~\ref{tab:lag_decay}---all
+lags significant with no decay to zero---is inconsistent with a causal
+information-transmission model and consistent with a common prior-return driver. This design is more informative than a
+conventional Granger causality test because it uses the same nonparametric
+nuisance learner as the primary specification, ensuring that the lag test and
+the forward estimate are methodologically symmetric. The approach is
+transferable to any setting where a researcher wants to assess whether
+sentiment leads or lags prices using high-dimensional panel data.
+
+\subsection{Concluding Remarks}\label{concluding-remarks}
+
+There is meaningful evidence that Twitter sentiment predicts asset prices for
+smaller, less institutionally covered stocks. The Russell~3000 cap-group
+gradient is sharp, persistent through time, and consistent with a
+well-grounded economic mechanism. However, asserting \emph{causality} in that
+segment requires that these findings pass the same rigorous robustness checks
+applied to the S\&P~500 analysis here: a cap-group-specific placebo test, a
+lag-decay analysis by size partition, and a DoubleML estimate within each
+cap group that handles confounding nonparametrically. None of those tests has
+been conducted for the Russell~3000 at the time of writing. Until they are,
+the small- and mid-cap coefficients should be interpreted as predictive
+associations with a plausible causal story, not as established causal effects.
+Completing that agenda, and extending it with a time-stamped, entity-level
+sentiment instrument, is the subject of future work.

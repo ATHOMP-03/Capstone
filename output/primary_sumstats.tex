@@ -1,0 +1,36 @@
+\begin{table}[htbp]
+\centering
+\caption{Summary Statistics --- Primary S\&P~500 Panel (2025--2026)\label{tab:sumstats_primary}}
+\small
+\begin{tabular}{lrrrrr}
+\hline\hline
+Variable & Mean & SD & Min & Max & $N$ \\
+\hline
+\addlinespace[0.5ex]
+\multicolumn{6}{l}{\textit{Outcome and treatment variables}} \\
+\addlinespace[0.3ex]
+  \texttt{return} (\$)             & $0.061$      & $8.810$       & $-582.570$  & $521.270$     & 160,487 \\
+  \texttt{twitter\_sent}           & $0.020$      & $0.118$       & $-0.999$    & $0.992$       & 160,103 \\
+  \texttt{twitter\_neg\_count}     & $2.044$      & $25.721$      & $0.000$     & $3{,}121.000$ & 159,232 \\
+  \texttt{news\_sent}              & $-0.002$     & $0.179$       & $-1.000$    & $0.998$       & 160,487 \\
+\addlinespace[0.5ex]
+\multicolumn{6}{l}{\textit{Price and market variables}} \\
+\addlinespace[0.3ex]
+  \texttt{px\_high} (\$)           & $225.256$    & $473.577$     & $7.560$     & $8{,}567.560$ & 160,487 \\
+  \texttt{px\_low} (\$)            & $219.948$    & $463.754$     & $6.860$     & $8{,}472.000$ & 160,487 \\
+  \texttt{mkt\_cap} (\$M)          & $119{,}619$  & $373{,}869$   & $3{,}430$   & $5{,}031{,}072$ & 160,475 \\
+  \texttt{volume} (shares)         & $1{,}831{,}016$ & $4{,}059{,}166$ & $2{,}789$ & $214{,}110{,}528$ & 160,487 \\
+\addlinespace[0.5ex]
+\multicolumn{6}{l}{\textit{Firm fundamentals}} \\
+\addlinespace[0.3ex]
+  \texttt{total\_equity} (\$M)     & $23{,}824$   & $54{,}630$    & $-14{,}231$ & $719{,}703$   & 157,412 \\
+  \texttt{debt\_to\_equity} (\%)   & $164.870$    & $522.343$     & $0.000$     & $9{,}191.429$ & 148,633 \\
+\addlinespace[0.5ex]
+\multicolumn{6}{l}{\textit{Technical indicators}} \\
+\addlinespace[0.3ex]
+  \texttt{rsi\_30}                 & $50.912$     & $8.516$       & $16.704$    & $87.570$      & 160,257 \\
+  \texttt{ma\_50} (\$)             & $221.816$    & $472.937$     & $8.329$     & $8{,}946.917$ & 160,097 \\
+\hline\hline
+\multicolumn{6}{p{0.98\linewidth}}{\footnotesize \textit{Notes:} Daily firm-level panel. 503 S\&P~500 constituents, January~2025 through March~2026 (approximately 320 trading days). \texttt{return} = open-to-close price change (\$). \texttt{twitter\_sent} = Bloomberg daily average Twitter sentiment $\in [-1,1]$. \texttt{twitter\_neg\_count} = count of negative-polarity tweets. \texttt{news\_sent} = Bloomberg daily average news sentiment $\in [-1,1]$. \texttt{mkt\_cap} = market capitalisation (\$M). \texttt{rsi\_30} = 30-day Relative Strength Index. $N$ reflects non-missing observations per variable; listwise deletion reduces the FE-OLS full model (Model~2) to 147,128 observations.} \\
+\end{tabular}
+\end{table}

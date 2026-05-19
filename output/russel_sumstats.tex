@@ -1,0 +1,30 @@
+\begin{table}[htbp]
+\centering
+\caption{Summary Statistics --- Russell 3000 Panel (2016--2026)\label{tab:sumstats_russel}}
+\small
+\begin{tabular}{lrrrrr}
+\hline\hline
+Variable & Mean & SD & Min & Max & $N$ \\
+\hline
+\addlinespace[0.5ex]
+\multicolumn{6}{l}{\textit{Sentiment variables}} \\
+\addlinespace[0.3ex]
+  \texttt{twitter\_sent}           & $0.027$      & $0.165$       & $-1.000$    & $1.000$       & 2,183,113 \\
+  \texttt{news\_sent}              & $0.019$      & $0.262$       & $-1.000$    & $1.000$       & 2,169,011 \\
+\addlinespace[0.5ex]
+\multicolumn{6}{l}{\textit{Market and price variables}} \\
+\addlinespace[0.3ex]
+  \texttt{mkt\_cap} (\$M)          & $17{,}064$   & $98{,}558$    & $0.371$     & $5{,}031{,}072$ & 5,015,692 \\
+  \texttt{log\_mkt\_cap}           & $7.775$      & $1.883$       & $-0.992$    & $15.431$      & 5,015,692 \\
+  \texttt{volume} (shares)         & $578{,}573$  & $3{,}198{,}797$ & $0$       & $837{,}455{,}680$ & 5,019,920 \\
+  \texttt{bid\_ask\_spread} (\$)   & $0.602$      & $13.577$      & $0.000$     & $999.991$     & 5,000,337 \\
+\addlinespace[0.5ex]
+\multicolumn{6}{l}{\textit{Cap-group breakdown (firm-day observations)}} \\
+\addlinespace[0.3ex]
+  Large cap ($\overline{\text{mkt\_cap}} > \$10$B) & \multicolumn{4}{c}{---} & 763,274 \\
+  Mid cap (\$2B--\$10B)                            & \multicolumn{4}{c}{---} & 640,932 \\
+  Small cap ($\overline{\text{mkt\_cap}} < \$2$B)  & \multicolumn{4}{c}{---} & 568,068 \\
+\hline\hline
+\multicolumn{6}{p{0.98\linewidth}}{\footnotesize \textit{Notes:} Daily firm-level panel. Approximately 2,921 Russell~3000 constituents, January~2016 through February~2026 (truncated at the last available Fama-French factor date). The analysis dependent variable (\texttt{return\_oo\_adj}) is the Fama-French-Carhart four-factor residual of the open-to-open return, computed at runtime; 1,156,294 firm-days have a non-missing factor-adjusted return. Cap-group $N$ reflects firm-days used in the Panel OLS cap-group regressions (Table~\ref{tab:russel_cap_ols}), restricted to firms with non-missing price data. $\overline{\text{mkt\_cap}}$ denotes each firm's time-averaged market capitalisation used for fixed group assignment. \texttt{twitter\_sent} coverage is lower than total firm-days because Bloomberg's classifier requires a minimum tweet volume threshold.} \\
+\end{tabular}
+\end{table}

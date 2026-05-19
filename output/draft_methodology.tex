@@ -1,0 +1,270 @@
+\section{Methodology}\label{methodology}
+
+This section describes the two primary identification strategies---firm
+fixed-effects OLS and Double Machine Learning---as well as the
+Fama-MacBeth procedure used for temporal and cross-sectional analysis,
+the cap-group classification, and the long-short portfolio construction.
+
+\subsection{Firm Fixed-Effects OLS}\label{firm-fixed-effects-ols}
+
+The baseline identification strategy is a within-firm panel regression.
+Let \(Y_{\text{it}}\) denote the open-to-close price change
+(\texttt{return}) for firm \(i\) on day \(t\), \(D_{\text{it}}\) the
+sentiment treatment, and \(X_{\text{it}}\) a vector of controls. The
+estimating equation is:
+
+\[Y_{\text{it}} = \alpha_{i} + \beta D_{\text{it}} + \mathbf{\gamma}^{'}X_{\text{it}} + \varepsilon_{\text{it}},\]
+
+where \(\alpha_{i}\) is a firm fixed effect and
+\(\varepsilon_{\text{it}}\) is an idiosyncratic error. The parameter of
+interest is \(\beta\), the within-firm partial effect of sentiment on
+same-day return after conditioning on observable time-varying
+confounders.
+
+Firm fixed effects absorb all time-invariant, firm-specific factors that
+could jointly influence sentiment coverage and price levels---including
+industry membership, market capitalization quintile, analyst following,
+and the firm's typical trading clientele. The identifying variation is
+purely within-firm and over time. This is appropriate because
+Bloomberg's Twitter sentiment measure has markedly heterogeneous
+coverage across firms
+(Section~\ref{measurement-limitations}): the fixed
+effect controls for the fact that firms with high average sentiment may
+simply be large, liquid, or widely-followed, and thus differ from
+low-coverage firms on dimensions that also affect returns.
+
+The control vector \(X_{\text{it}}\) in the full specification (Model~2)
+includes: intraday price range (\texttt{px\_high}, \texttt{px\_low}),
+market capitalization (\texttt{mkt\_cap}), book equity
+(\texttt{total\_equity}), leverage (\texttt{debt\_to\_equity}), trading
+volume (\texttt{volume}), news sentiment (\texttt{news\_sent}), negative
+tweet count (\texttt{twitter\_neg\_count}), 30-day RSI (\texttt{rsi\_30}),
+and the 50-day moving average (\texttt{ma\_50}).
+Standard errors are heteroskedasticity-robust throughout.
+
+Four treatment constructions are estimated. Model~1 uses the continuous
+daily average sentiment score
+\(D_{\text{it}} = \text{twitter\_sent} \in \lbrack - 1, + 1\rbrack\).
+Model~2 augments Model~1 with the full control vector. Model~3 replaces
+the treatment with a negative-clipped measure,
+\(D_{\text{it}} = \text{min}(\text{twitter\_sent}_{\text{it}},\, 0)\),
+which equals zero on positive-sentiment days and the raw score on
+negative-sentiment days---isolating whether the return effect is
+asymmetric in the negative tail. Model~4, following Teti et al.\ (2019),
+uses daily negative tweet counts (\texttt{twitter\_neg\_count}) as the
+treatment. All four models include firm fixed effects.
+
+\textbf{Limitation.} The FE-OLS specification assumes that the
+confounder--outcome and confounder--treatment relationships are both
+linear. Nonlinear interactions among controls---for example, between
+momentum (RSI) and sentiment during high-volatility regimes---will
+contaminate the \(\beta\) estimate if the true data-generating process
+is non-additive. The DoubleML specification in
+Section~\ref{double-machine-learning} relaxes this
+assumption.
+
+\subsection{Double Machine Learning}\label{double-machine-learning}
+
+The primary causal estimator is the Partially Linear Regression (PLR)
+model of Chernozhukov et al.\ (2018), estimated via the \texttt{DoubleML}
+Python package. The PLR model is:
+
+\[\begin{matrix}
+Y_{\text{it}} & = \theta_{0}D_{\text{it}} + g_{0}(X_{\text{it}}) + U_{\text{it}},\quad E\lbrack U_{\text{it}} \mid D_{\text{it}},X_{\text{it}}\rbrack = 0, \\
+D_{\text{it}} & = m_{0}(X_{\text{it}}) + V_{\text{it}},\quad E\lbrack V_{\text{it}} \mid X_{\text{it}}\rbrack = 0, \\
+\end{matrix}\]
+
+where \(\theta_{0}\) is the causal parameter of interest, and
+\(g_{0}( \cdot )\) and \(m_{0}( \cdot )\) are unknown nuisance functions
+capturing the conditional expectations of the outcome and treatment
+given the full confounder vector \(X_{\text{it}}\), respectively.
+Critically, \(g_{0}\) and \(m_{0}\) are estimated
+nonparametrically---here using XGBoost as the nuisance learner---so no
+linearity or additive separability is assumed for the confounders.
+
+\textbf{Cross-fitting.} To prevent overfitting bias from contaminating
+the treatment effect estimate, I use \(K = 5\) folds of cross-fitting:
+the nuisance functions \(\widehat{g}\) and \(\widehat{m}\) are trained
+on four folds and evaluated on the held-out fold, so the residuals
+\({\widehat{U}}_{\text{it}}\) and \({\widehat{V}}_{\text{it}}\) are
+always out-of-sample predictions. The final coefficient
+\(\widehat{\theta}\) is obtained by regressing
+\({\widehat{U}}_{\text{it}}\) on \({\widehat{V}}_{\text{it}}\)---the
+partialled-out outcome on the partialled-out treatment---aggregated
+across folds. The primary treatment-effect estimates use a single
+cross-fitting draw; standard errors are computed from the \texttt{DoubleML}
+package's default asymptotic variance formula. For the lag-decay and
+impact-persistence robustness specifications (\texttt{lag\_cates.py}),
+I repeat the full cross-fitting procedure over 20 random fold assignments
+and derive confidence intervals from 1,000 bootstrap draws, which
+stabilizes coefficient estimates against fold-specific randomness in the
+smaller effective samples obtained when conditioning on lagged or lead
+return windows.
+
+\textbf{XGBoost configuration.} The nuisance learner is XGBoost
+(\texttt{XGBRegressor}), a gradient-boosted tree ensemble. Gradient
+boosting is well-suited to this setting because it handles mixed-type
+regressors, captures nonlinear and interaction effects implicitly
+through tree splits, and is robust to the collinearity among sentiment,
+momentum, and volume variables that can destabilize linear nuisance
+models. The same confounder set used in the FE-OLS full model is
+supplied to both nuisance learners.
+
+\textbf{Treatment variants.} Three treatment series are estimated
+separately in the DoubleML framework: (1) \texttt{twitter\_sent}
+(continuous); (2) \texttt{twitter\_neg\_count} (count of
+negative-polarity tweets, following Teti et al.\ (2019)); and (3)
+\texttt{news\_sent} (continuous news sentiment). A fourth specification
+estimates each treatment against \texttt{px\_high} (intraday price high)
+as the outcome rather than \texttt{return}, to test whether sentiment's
+effect on the intraday price ceiling differs from its effect on the
+close-to-open spread.
+
+\textbf{Identifying assumption.} Under the PLR, \(\theta_{0}\) is
+identified if
+\(E\lbrack U_{\text{it}} \mid D_{\text{it}},X_{\text{it}}\rbrack = 0\)---that
+is, if the confounder vector \(X_{\text{it}}\) fully controls for the
+non-random assignment of sentiment to firms and days. This is a
+conditional unconfoundedness assumption. It does not require an
+instrument. It does require that no omitted variable jointly drives both
+\texttt{twitter\_sent} and \texttt{return} after conditioning on the
+observable controls. The plausibility of this assumption is assessed
+through the placebo test described in
+Section~\ref{robustness-tests}.
+
+\subsection{Fama-MacBeth Procedure and Temporal
+Analysis}\label{fama-macbeth-procedure-and-temporal-analysis}
+
+For the replication and temporal analysis, I follow Fama and MacBeth
+(1973) and Gu and Kurov (2020) in estimating daily cross-sectional
+regressions and aggregating the time series of coefficients. On each
+trading day \(t\), I estimate:
+
+\[r_{\text{it}} = a_{t} + b_{t} \cdot \text{twitter\_sent}_{i,t - 1} + \mathbf{c}_{t}^{'}X_{\text{it}} + e_{\text{it}},\]
+
+where \(r_{\text{it}}\) is the Fama-French-Carhart four-factor-adjusted
+return (\texttt{return\_oo\_adj}) for firm \(i\) on day \(t\), and the
+treatment is the one-day lagged sentiment score. The confounder vector
+\(X_{\text{it}}\) includes five lags each of \texttt{return\_oo\_adj},
+\texttt{abnorm\_vol} (abnormal volume), \texttt{vol\_rs}
+(Rogers-Satchell realized volatility), \texttt{log\_mkt\_cap}, and
+\texttt{bid\_ask\_spread}. The Fama-MacBeth estimate of the sentiment
+effect is \(\bar{b} = T^{- 1}\sum_{t = 1}^{T}{\widehat{b}}_{t}\), with
+Newey-West standard errors computed over the time series of
+\({\widehat{b}}_{t}\) using a bandwidth of five lags to correct for
+serial correlation. Days on which fewer than 30 firms report non-missing
+sentiment are excluded from the aggregation.
+
+\textbf{Risk adjustment.} Factor-adjusted returns
+(\texttt{return\_oo\_adj}) are constructed by estimating full-sample
+Fama-French-Carhart four-factor betas for each firm and subtracting the
+fitted four-factor component from the raw open-to-open return. Factor
+data are obtained from Kenneth French's data library; the sample is
+truncated at the last available factor date (February 28, 2026) to avoid
+extrapolation. The residual \texttt{return\_oo\_adj} captures
+idiosyncratic price variation that cannot be attributed to market, size,
+value, or momentum exposures, and is the appropriate dependent variable
+for tests of sentiment-specific information.
+
+\textbf{Temporal windows.} The Fama-MacBeth procedure is applied
+separately over annual, quarterly, and monthly windows to characterize
+how the sentiment coefficient has evolved from 2016 to 2026. Results are
+reported graphically as coefficient-and-confidence-band plots and, for
+the annual cadence, in a tabular format. Monthly estimates are less
+reliable due to small cross-sections in some months and are used for
+visualization only.
+
+\subsection{Cap-Group Classification and Russell 3000
+Analysis}\label{cap-group-classification-and-russell-3000-analysis}
+
+To test whether the sentiment effect is heterogeneous across the
+market-capitalization spectrum, I classify all Russell 3000 firms into
+three groups based on their time-averaged market capitalization:
+
+\begin{itemize}
+\item
+  \textbf{Large cap:} \({\overline{\text{mkt\_cap}}}_{i} > \$ 10\)B
+\item
+  \textbf{Mid cap:} \(\$ 2\)B
+  \(\leq {\overline{\text{mkt\_cap}}}_{i} \leq \$ 10\)B
+\item
+  \textbf{Small cap:} \({\overline{\text{mkt\_cap}}}_{i} < \$ 2\)B
+\end{itemize}
+
+I use time-averaged rather than daily market capitalization to assign
+group membership, so that firms do not migrate between groups due to
+price volatility within the sample window. This ensures that the
+cap-group comparison is stable and that within-group temporal analysis
+is not confounded by within-firm cap migration.
+
+The Russell 3000 analysis proceeds in three stages. First, I estimate a
+pooled Panel OLS with firm fixed effects that includes a
+\texttt{twitter\_sent} \(\times\) \texttt{log\_mkt\_cap} interaction
+term, testing whether the sentiment coefficient is linearly decreasing
+in firm size across the full cross-section. Second, I run the
+Fama-MacBeth procedure separately for each cap group and plot the annual
+coefficient series. Third, I compute a daily long-short portfolio within
+each cap group to assess the economic magnitude of the cross-sectional
+dispersion in sentiment.
+
+\subsection{Long-Short Portfolio
+Construction}\label{long-short-portfolio-construction}
+
+To assess the economic significance of the sentiment-return
+relationship, I construct a daily long-short portfolio following Gu and
+Kurov (2020). % [R2]: Clarify whether decile sort uses same-day (contemporaneous) or prior-day
+% (lagged) sentiment. "Contemporaneous" is noted in the table caption but an
+% open-to-open holding period implies prior-day sorting. Resolve before submission.
+On each trading day \(t\), all firms with non-missing
+\texttt{twitter\_sent} are ranked into deciles. The strategy takes a
+long position in firms in the top decile (highest sentiment) and a short
+position in firms in the bottom decile (lowest sentiment), holding for
+24 hours on an open-to-open basis. Portfolio returns are the
+equal-weighted average return across firms in each leg. For the
+cap-group analysis, deciles are formed separately within each cap group,
+so the strategy is self-contained per segment and not dominated by
+large-cap firms with superior sentiment coverage.
+
+Performance is summarized by annualized Sharpe ratio (assuming 252
+trading days), annualized return, and win rate (fraction of days on
+which the long leg outperforms the short leg). All reported figures are
+before transaction costs, and the strategy should be interpreted as an
+upper bound on achievable risk-adjusted performance.
+
+\subsection{Robustness Tests}\label{robustness-tests}
+
+Four robustness checks discipline the causal interpretation of the
+primary estimates.
+
+\textbf{Placebo test.} Yesterday's return (\texttt{lag1}) is regressed
+on today's Twitter sentiment within firms. Under the null of no reverse
+causality, the coefficient should be indistinguishable from zero. A
+large, significant coefficient indicates that today's sentiment responds
+to yesterday's price movement---feedback from prices to social media---and
+constitutes evidence against a clean forward causal interpretation of the
+primary estimates.
+
+\textbf{No-reversal test.} I enter five sentiment lags jointly
+(\(\text{twitter\_sent}_{i,t - 1}\) through
+\(\text{twitter\_sent}_{i,t - 7}\), at lags 1, 2, 3, 5, 7) and test
+whether only lag~1 is significant. Under a causal interpretation in
+which information is absorbed within one trading day, the multi-lag
+regression should show significance concentrated at lag~1 with
+coefficients at longer lags near zero.
+
+\textbf{Lag decay.} Each sentiment lag is estimated separately in a
+univariate DoubleML specification with the same confounder set as the
+primary model. If the coefficient is large at lag~1 and decays
+monotonically to zero by lag~5 or lag~7, this is consistent with a
+transient but real sentiment effect. A pattern of large, roughly equal
+coefficients at all lags is inconsistent with causal transmission
+through prices and more consistent with a common driver of both
+sentiment and returns.
+
+\textbf{Impact persistence.} Current-day sentiment is regressed on
+future returns at leads \(+ 1\) through \(+ 7\) (same intervals as lag
+decay). Under the hypothesis that positive sentiment today drives
+positive returns tomorrow, the lead-1 coefficient should be positive and
+significant, with the effect decaying at longer leads. A flat or
+sign-inconsistent pattern across leads is evidence against a durable
+predictive signal.

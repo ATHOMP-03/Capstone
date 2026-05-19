@@ -1,0 +1,115 @@
+\documentclass[12pt,letterpaper]{article}
+
+%% ── Encoding & fonts ─────────────────────────────────────────────────────────
+\usepackage[T1]{fontenc}
+\usepackage[utf8]{inputenc}
+\usepackage{lmodern}
+\usepackage{microtype}
+
+%% ── Page layout ──────────────────────────────────────────────────────────────
+\usepackage[margin=1in]{geometry}
+
+%% ── Math ──────────────────────────────────────────────────────────────────────
+\usepackage{amsmath,amssymb,amsthm}
+
+%% ── Tables ───────────────────────────────────────────────────────────────────
+\usepackage{booktabs}
+\usepackage{longtable}
+\usepackage{array}
+\usepackage{multirow}
+\usepackage{tabularx}
+\usepackage{makecell}
+\usepackage{threeparttable}
+\usepackage{rotating}
+
+%% ── Figures ──────────────────────────────────────────────────────────────────
+\usepackage{graphicx}
+\usepackage{float}
+\usepackage{caption}
+\usepackage{subcaption}
+
+%% ── Hyperlinks ───────────────────────────────────────────────────────────────
+\usepackage[colorlinks=true, linkcolor=blue, citecolor=blue, urlcolor=blue]{hyperref}
+
+%% ── Misc ─────────────────────────────────────────────────────────────────────
+\usepackage{setspace}
+\doublespacing
+\usepackage{parskip}
+\setlength{\parindent}{0pt}
+\setlength{\parskip}{6pt}
+\usepackage{xcolor}
+\usepackage{etoolbox}
+\usepackage{footnotehyper}
+\makesavenoteenv{longtable}
+\setlength{\emergencystretch}{3em}
+\providecommand{\tightlist}{%
+  \setlength{\itemsep}{0pt}\setlength{\parskip}{0pt}}
+
+%% ── Title ────────────────────────────────────────────────────────────────────
+\title{\textbf{Is Twitter for the Birds?}\\[0.4em]
+  \large Estimating the Causal Effect of Twitter (X) Sentiment on Stock Returns}
+\author{Ashley Thompson\\
+  \small University of San Francisco\\
+  \small \texttt{althompson9@dons.usfca.edu}}
+\date{May 2026}
+
+% =============================================================================
+\begin{document}
+% =============================================================================
+
+\maketitle
+\thispagestyle{empty}
+
+%% ── Abstract ─────────────────────────────────────────────────────────────────
+\input{draft_abstract}
+
+\newpage
+\tableofcontents
+\newpage
+
+%% ── Body sections ────────────────────────────────────────────────────────────
+\input{draft_introduction}
+
+\input{draft_literature_review}
+
+\input{draft_data}
+
+%% ── Tables: Summary statistics (Tables 2--4, after Section 3.5) ──────────────
+\input{primary_sumstats}
+\input{gk_temporal_sumstats}
+\input{russel_sumstats}
+
+\input{draft_methodology}
+
+\input{draft_results}
+
+%% ── Tables: FE-OLS (Tables 5--6) ─────────────────────────────────────────────
+\input{fe_main_results}
+\input{fe_robustness}
+
+%% ── Tables: DoubleML (Tables 7--9) ───────────────────────────────────────────
+\input{dml_main_results}
+\input{dml_news_results}
+\input{dml_px_high_results}
+
+%% ── Tables: Temporal / Gu & Kurov replication (Tables 10--11) ───────────────
+\input{gk_temporal_fmb}
+\input{gk_temporal_ls}
+
+%% ── Tables: Robustness (Tables 12--13) ───────────────────────────────────────
+\input{lag_decay_table}
+\input{impact_persistence_table}
+
+%% ── Tables: Russell 3000 cap-group (Tables 14--16) ──────────────────────────
+\input{russel_cap_ols}
+\input{russel_cap_fmb_annual}
+\input{russel_cap_ls_annual}
+
+%% ── Discussion & Conclusion ──────────────────────────────────────────────────
+\input{draft_discussion}
+
+\input{draft_conclusion}
+
+% =============================================================================
+\end{document}
+% =============================================================================

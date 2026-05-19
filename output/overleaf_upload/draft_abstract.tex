@@ -1,0 +1,23 @@
+% draft_abstract.tex
+\begin{abstract}
+This paper estimates the causal effect of daily Twitter sentiment on intraday stock returns
+using two identification strategies: firm fixed-effects OLS and Double Machine Learning (DoubleML)
+with XGBoost nuisance learning. The primary dataset is a Bloomberg daily panel of 503 S\&P~500
+firms spanning January 2025 to March 2026 (approximately 160{,}000 firm-day observations),
+extended to a 1.19-million-observation S\&P~500 panel and a 1.97-million-observation Russell 3000 panel
+over 2016--2026 for temporal and cross-sectional analysis. In the S\&P~500 sample, Twitter sentiment
+is statistically insignificant in all fixed-effects specifications; the DoubleML estimate is
+$-0.924$ ($p < 0.01$), but a placebo test---regressing yesterday's return on today's
+sentiment---yields a coefficient of $+2.348$ ($p < 0.01$), indicating substantial reverse
+causality from prices to sentiment. News sentiment is the more robust predictor across both
+frameworks ($-0.759^{***}$ in DoubleML). A Fama-MacBeth replication of Gu and Kurov (2020)
+produces insignificant coefficients on lagged Twitter sentiment in every calendar year from
+2016 to 2025 for the S\&P~500, but significant effects in the broader Russell 3000.
+Cap-group decomposition reveals a sharp gradient: the Panel OLS sentiment coefficient is
+$+0.375^{***}$ for large-cap firms, rising to $+0.804^{***}$ for mid-cap and
+$+0.942^{***}$ for small-cap firms, consistent with an information-environment explanation
+in which Twitter provides marginal predictive content primarily where institutional analyst
+coverage is sparse. Daily long-short portfolios sorted on sentiment generate positive Sharpe
+ratios in most years, suggesting the signal is concentrated in the tails of the
+cross-sectional distribution rather than in a linear average slope.
+\end{abstract}

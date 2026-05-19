@@ -2,28 +2,31 @@
 
 ## Project
 - Topic: Causal effect of social media sentiment on stock price movements
-- Languages: Python (data wrangling, sentiment analysis), R (causal inference, fixest)
-- Methods: OLS with fixed effects (panel data), DoubleML
-- Data: Bloomberg terminal excel exports, daily stock-level, dependent variable is open-to-close price change, annotated as 'return'
+- Language: Python (all analysis; run as Colab notebooks in notebooks/)
+- Methods: FE-OLS (linearmodels/pyfixest), DoubleML PLR (XGBoost nuisance), Fama-MacBeth
+- Data: Bloomberg terminal Excel exports, daily stock-level; dependent variable is open-to-close price change (`return`)
 
 ## Folder Structure
-- data/raw/ -- original Bloomberg CSVs (never modify)
-- data/processed/ -- cleaned and merged datasets
-- notebooks/ -- Colab notebooks for running python script and ML models
-- src/python/ -- Python scripts (data cleaning, sentiment analysis)
-- src/r/ -- R scripts (01_clean.R, 02_merge.R, 03_analysis.R)
-- output/ -- figures and tables as LaTeX, results section of paper as markdown file
+- data/raw/           -- original Bloomberg CSVs/XLSX (never modify; gitignored)
+- data/processed/     -- cleaned panel CSVs produced by src/python/clean_data*.py
+- notebooks/          -- Colab notebooks (canonical execution; one per analysis script)
+- src/python/         -- Python scripts (data cleaning, FE-OLS, DoubleML, robustness)
+- output/             -- LaTeX tables, figures, draft sections, Overleaf package
+- output/overleaf_upload/ -- self-contained Overleaf package (master: capstone_final_v2.tex)
+- references/         -- PDFs and notes (gitignored)
 
 ## Commands
-- python src/python/clean_data.py   # data cleaning
-- Rscript src/r/03_analysis.R       # estimation
+- python src/python/clean_data.py          # primary S&P 500 panel cleaning
+- python src/python/clean_data_russel.py   # Russell 3000 panel cleaning
+- python src/python/ml_analysis.py         # DoubleML primary spec
+- python src/python/analysis.py            # FE-OLS specs + placebo
+- # All other analyses: see notebooks/ for Colab equivalents
 
 ## Conventions
-- snake_case variable names in both Python and R
+- snake_case variable names in Python
 - NA for missing values (never 999)
 - Raw data is read-only; all transformations produce new files in data/processed/
-- Commit code only; raw data stays local (.gitignore excludes CSVs)
-- R code with "=" only, no "<-" for assignment
+- Commit code only; raw data stays local (.gitignore excludes CSVs/XLSX)
 
 ## Persona
 - Capability: Perform like a senior data scientist with masters degrees in Data Science, Machine Learning, Economics, and Statistics. Code with a stlye commensurate to that education in both R and Python.

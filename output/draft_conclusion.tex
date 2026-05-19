@@ -1,0 +1,65 @@
+% draft_conclusion.tex
+% Style: Academic Paper
+% Target: ~500--700 words of body text
+% Rewritten 2026-05-17 — shortened and aligned with draft_discussion.tex
+
+\section{Conclusion}\label{conclusion}
+
+This paper examines whether Twitter sentiment causally affects intraday stock
+returns, using a Bloomberg panel of S\&P~500 and Russell~3000 firms and two
+identification strategies: firm fixed-effects OLS and Double Machine Learning
+with XGBoost nuisance learning. The central finding is conditional. Twitter
+sentiment does not reliably predict returns in large-cap S\&P~500 firms, where
+the null result holds across every fixed-effects specification and every
+calendar year from 2016 through 2025. In the broader Russell~3000, sentiment
+effects are positive, significant, and increasing in magnitude as market
+capitalization decreases---small-cap coefficient $+0.942^{***}$, mid-cap
+$+0.804^{***}$, large-cap $+0.375^{***}$. This gradient is consistent with
+an information-environment explanation where Twitter commentary carries marginal
+information precisely where analyst and institutional coverage is thinnest.
+
+Two additional results support the presence of a real, if modest, signal. The
+DoubleML estimator recovers a significant negative coefficient on Twitter
+sentiment ($-0.924^{***}$) in the S\&P~500 panel, precisely estimated via
+five-fold cross-fitting and confirmed as stable across the robustness specifications. And a long-short portfolio sorted on
+daily sentiment earns positive annualized returns in nine of ten complete
+calendar years, even in years when the cross-sectional regression coefficient
+is near zero---consistent with a nonlinear tail that linear regression
+cannot recover. Taken together, these results give cautious confidence that
+the sentiment signal exists but require that its practical use take into
+account the data and identification limitations described below.
+
+The primary caveat is reverse causality. The placebo test, regressing
+yesterday's return on today's sentiment, produces a coefficient of
+$+2.348^{***}$, larger in magnitude than the forward DoubleML estimate. This
+does not eliminate the possibility of a forward effect, but it establishes that
+the sentiment-return correlation is contaminated by prices feeding
+back into social media activity. The Bloomberg daily aggregate compounds this
+problem by conflating pre-market tweets with same-day price reactions, making
+it impossible to cleanly separate cause from effect without timestamp-level
+data. Additionally, the inclusion of same-day intraday price controls
+(\texttt{px\_high}, \texttt{px\_low}) in the FE-OLS specification introduces a
+bad-control problem that likely attenuates the Twitter coefficient toward zero;
+DoubleML's nonparametric nuisance learner handles this implicitly, which is the
+preferred approach for future work in this area.
+
+This paper makes three contributions. First, the Russell~3000 cap-group
+decomposition refines Gu and Kurov (2020): their positive result likely
+reflects smaller firms in their universe rather than a universal large-cap
+effect, and the monotone cap-group gradient provides a direct test of the
+information-environment hypothesis. Second, this is the first application of
+the Chernozhukov et al.\ (2018) double machine learning framework to the
+Twitter sentiment and stock return problem, demonstrating its viability as a
+debiased estimator in high-dimensional sentiment panels. Third, the use of
+univariate DoubleML estimates at lags one through seven as a reverse causality
+screen---a lag-CATE design---is a methodological contribution transferable to
+any setting where a researcher needs to assess whether sentiment leads or lags
+prices under nonlinear confounding.
+
+There is meaningful evidence that Twitter sentiment predicts returns for
+smaller stocks. To assert causality in that segment, however, these findings
+would need to pass the same robustness checks applied here to the S\&P~500: a
+cap-group-specific placebo test, lag-decay analysis by size partition, and
+within-group DoubleML estimation. Extending those tests, and replacing the
+Bloomberg daily aggregate with a time-stamped, entity-level sentiment
+instrument, is the subject of future work.
